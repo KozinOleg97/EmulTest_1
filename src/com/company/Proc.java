@@ -1,6 +1,6 @@
 package com.company;
 
-
+//йцуйуцйуйуй
 public class Proc {
 
 
@@ -19,7 +19,7 @@ public class Proc {
         private Byte B; //:1; // currently in break(BRK) interrupt
         private Byte NU; //:1; // always 1
         private Byte V; //:1; // oVerflow
-        private Byte N; //:1; // negative(?)
+        private Byte N; //:1; // n egative(?)
     }
 
 
