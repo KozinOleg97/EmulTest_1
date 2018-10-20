@@ -3,6 +3,7 @@ package com.company;
 
 //http://www.emuverse.ru/wiki/MOS_Technology_6502/Система_команд
 //http://nparker.llx.com/a2/opcodes.html
+//https://www.atariarchives.org/alp/appendix_1.php
 
 public class Proc {
 
