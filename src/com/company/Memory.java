@@ -40,14 +40,14 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
     {
         switch(addr&0xF000)
         {
+            case 0:
+            case 0x1000:
+                if((addr&0x1800)!=0) log.log(Level.FINE, "RAM mirroring at "+Integer.toHexString(addr));
+                return mainMemory[addr&0x07FF];
             case 0x2000:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
-            case 0x1000:
-            case 0:
-                if((addr&0x1800)!=0) log.log(Level.FINE, "RAM mirroring at "+Integer.toHexString(addr));
-                return mainMemory[addr&0x07FF];
         }
     }
 
@@ -71,14 +71,14 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
 
         switch(addr&0xF000)
         {
+            case 0:
+            case 0x1000:
+                mainMemory[addr&0x7FF]=val;
+                return true;
             case 0x2000:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
-            case 0x1000:
-            case 0:
-                mainMemory[addr&0x7FF]=val;
-                return true;
         }
     }
 
