@@ -1,6 +1,9 @@
 package com.company;
 
 
+//http://www.emuverse.ru/wiki/MOS_Technology_6502/Система_команд
+//http://nparker.llx.com/a2/opcodes.html
+
 public class Proc {
 
 
@@ -27,16 +30,45 @@ public class Proc {
 
     //private Byte NESMem[][] = new Byte[64][256];
 
-
+    // Вход: opCodes[regPC] - следующий байт потока инструкций. При входе в эту функцию указывает на первый байт операнда
+    // addrmode - три бита, выдранные из инструкции
+    // Выход: opAddr - адрес операнда
+    // Результат: содержимое операнда
     Byte takeoper(Byte[] opCodes, Byte addrmode, Byte opAddr) {
 	/*
-		000   ind,x
+	    Для ZZ=01 и ZZ=11(недокументированные инструкции)
+
+       000   ind,x
+       001   zp
+       010   immed
+       011   abs
+       100   ind,y
+       101   zp,x
+       110   abs,y
+       111   abs,x
+	*/
+	/*
+	    Для ZZ=10
+
+		000   immed
 		001   zp
-		010   immed
+		010   impl
 		011   abs
-		100   ind,y
+		100   ИНВАЛИД/КРЕШ
 		101   zp,x
-		110   abs,y
+		110   impl
+		111   abs,x
+	*/
+	/*
+	    Для ZZ=00
+
+		000   immed
+		001   zp
+		010   impl
+		011   abs
+		100   rel(инструкции перехода)
+		101   zp,x
+		110   impl
 		111   abs,x
 	*/
 
