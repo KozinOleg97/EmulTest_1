@@ -1,6 +1,10 @@
 package com.company;
 
-//йцуйуцйуйуй
+
+//http://www.emuverse.ru/wiki/MOS_Technology_6502/Система_команд
+//http://nparker.llx.com/a2/opcodes.html
+//https://www.atariarchives.org/alp/appendix_1.php
+
 public class Proc {
 
 
@@ -19,7 +23,7 @@ public class Proc {
         private Byte B; //:1; // currently in break(BRK) interrupt
         private Byte NU; //:1; // always 1
         private Byte V; //:1; // oVerflow
-        private Byte N; //:1; // n egative(?)
+        private Byte N; //:1; // negative(?)
     }
 
 
@@ -27,21 +31,50 @@ public class Proc {
 
     //private Byte NESMem[][] = new Byte[64][256];
 
-
-    Byte takeoper(Byte[] opCodes, Byte addrmode, Byte opAddr) {
+    // Вход: opCodes[regPC] - следующий байт потока инструкций. При входе в эту функцию указывает на первый байт операнда
+    // addrmode - три бита, выдранные из инструкции
+    // Выход: opAddr - адрес операнда
+    // Результат: содержимое операнда
+    // Byte takeoper(Byte[] opCodes, Byte addrmode, Byte opAddr) {
 	/*
-		000   ind,x
+	    Для ZZ=01 и ZZ=11(недокументированные инструкции)
+
+       000   ind,x
+       001   zp
+       010   immed
+       011   abs
+       100   ind,y
+       101   zp,x
+       110   abs,y
+       111   abs,x
+	*/
+	/*
+	    Для ZZ=10
+
+		000   immed
 		001   zp
-		010   immed
+		010   impl
 		011   abs
-		100   ind,y
+		100   ИНВАЛИД/КРЕШ
 		101   zp,x
-		110   abs,y
+		110   impl
+		111   abs,x
+	*/
+	/*
+	    Для ZZ=00
+
+		000   immed
+		001   zp
+		010   impl
+		011   abs
+		100   rel(инструкции перехода)
+		101   zp,x
+		110   impl
 		111   abs,x
 	*/
 
 
-        Byte operlo = 0;
+  /*      Byte operlo = 0;
         switch (addrmode) {
             case 0:
                 opAddr =&NESMem[0][255 & (regX + opCodes[regPC++])];
@@ -220,7 +253,7 @@ public class Proc {
         wprintf(L"terminated. A: %02x, X: %02x, Y: %02x, PC: %04x, S: %02x", regA, regX, regY, regPC, regS);
         while (1) ;
         return 0;
-    }
+    }*/
 
 
 }
