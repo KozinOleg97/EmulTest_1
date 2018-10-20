@@ -52,7 +52,10 @@ public class Graphics {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the mainWindow will be resizable
 
         // Create the mainWindow
-        mainWindow = glfwCreateWindow(800, 600, "Hello World!", NULL, NULL);
+        int width = 800;
+        int heigth = 600;
+
+        mainWindow = glfwCreateWindow(width, heigth, "Hello World!", NULL, NULL);
         if (mainWindow == NULL)
             throw new RuntimeException("Failed to create the GLFW mainWindow");
 
@@ -73,6 +76,7 @@ public class Graphics {
             // Get the resolution of the primary monitor
             GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
+            System.out.println(vidmode.width() + "x" + vidmode.height());
 
             // Center the mainWindow
             glfwSetWindowPos(
@@ -82,6 +86,7 @@ public class Graphics {
             );
         } // the stack frame is popped automatically
 
+
         // Make the OpenGL context current
         glfwMakeContextCurrent(mainWindow);
         // Enable v-sync
@@ -89,6 +94,21 @@ public class Graphics {
 
         // Make the mainWindow visible
         glfwShowWindow(mainWindow);
+    }
+
+
+    private void myRectungle(int x, int y, int w, int h, float r, float g, float b) {
+        glPushMatrix();  //Make sure our transformations don't affect any other transformations in other code
+        glTranslatef(x, y, 0.0f);  //Translate rectangle to its assigned x and y position
+        //Put other transformations here
+        glBegin(GL_QUADS);   //We want to draw a quad, i.e. shape with four sides
+        glColor3f(r, g, b); //Set the colour to red
+        glVertex2f(0, 0);            //Draw the four corners of the rectangle
+        glVertex2f(0, h);
+        glVertex2f(w, h);
+        glVertex2f(w, 0);
+        glEnd();
+        glPopMatrix();
     }
 
     private void loop() {
@@ -100,15 +120,67 @@ public class Graphics {
         GL.createCapabilities();
 
         // Set the clear color
-        glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
+        //glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+        ////////////////////////////////////////////////////
+        int width = 800;
+        int heigth = 600;
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);  //Set the cleared screen colour to black
+        glViewport(0, 0, width, heigth);   //This sets up the viewport so that the coordinates (0, 0) are at the top left of the window
+
+        //Set up the orthographic projection so that coordinates (0, 0) are in the top left
+        //and the minimum and maximum depth is -10 and 10. To enable depth just put in
+        //glEnable(GL_DEPTH_TEST)
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0, width, heigth, 0, -10, 10);
+
+        //Back to the modelview so we can draw stuff
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Clear the screen and depth buffer
+/////////////////////////////////////////////////////////////
 
 
         // Run the rendering loop until the user has attempted to close
         // the mainWindow or has pressed the ESCAPE key.
+
+
+        int x = 5, y = 5;
+        int h = 20, w = 20;
+        int xi = 5, yi = 5;
+
+        int tx = 300, ty = 200;
+
+
         while (!glfwWindowShouldClose(mainWindow)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
+
+            if (x + w > width | x < 0) {
+                xi = -xi;
+            }
+
+            if (y + h > heigth | y < 0) {
+                yi = -yi;
+            }
+
+
+            x += xi;
+            y += yi;
+            myRectungle(x, y, w, h, 1, 0, 0);
+
+
+            glBegin(GL_TRIANGLES);
+            glColor3f(0.25f, 0.85f, 0.5f);
+            glVertex2f(tx, ty);
+            glVertex2f(tx + 50.0f, ty + 50.0f);
+            glVertex2f(tx + 70.0f, ty + -70.0f);
+            glEnd();
+            glPopMatrix();
+
             glfwSwapBuffers(mainWindow); // swap the color buffers
+
 
             // Poll for mainWindow events. The key callback above will only be
             // invoked during this call.
