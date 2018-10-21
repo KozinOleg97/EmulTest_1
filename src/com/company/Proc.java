@@ -5,37 +5,47 @@ package com.company;
 //http://nparker.llx.com/a2/opcodes.html
 //https://www.atariarchives.org/alp/appendix_1.php
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class Proc {
 
 
-    private Byte regA;
-    private Byte regX;
-    private Byte regY;
-    private Short regPC; // Был word
-    private Byte regS;
+    private byte regA;
+    private byte regX;
+    private byte regY;
+    private short regPC;
+    private byte regS;
 
+    private Logger log;
 
     private class regP {
-        private Byte C; //:1; // carry
-        private Byte Z; //:1; // zero
-        private Byte I; //:1; // interrupt 0==enabled
-        private Byte D; //:1; // decimal mode
-        private Byte B; //:1; // currently in break(BRK) interrupt
-        private Byte NU; //:1; // always 1
-        private Byte V; //:1; // oVerflow
-        private Byte N; //:1; // negative(?)
+        private byte C; //:1; // carry
+        private byte Z; //:1; // zero
+        private byte I; //:1; // interrupt 0==enabled
+        private byte D; //:1; // decimal mode
+        private byte B; //:1; // currently in break(BRK) interrupt
+        private byte NU; //:1; // always 1
+        private byte V; //:1; // oVerflow
+        private byte N; //:1; // negative(?)
+    }
+
+    private Memory m;
+
+
+    Proc(Memory mem)
+    {
+        regA = regX = regY = regS = 0;
+        regPC = 0;
+        m=mem;
     }
 
 
-
-
-    //private Byte NESMem[][] = new Byte[64][256];
-
-    // Вход: opCodes[regPC] - следующий байт потока инструкций. При входе в эту функцию указывает на первый байт операнда
+    // Вход: При входе в эту функцию regPC указывает на первый байт операнда
     // addrmode - три бита, выдранные из инструкции
     // Выход: opAddr - адрес операнда
     // Результат: содержимое операнда
-    Byte takeoper(Byte[] opCodes, Byte addrmode, Byte opAddr) {
+    byte takeoper(int addrmode, Short opAddrL) {
 	/*
 	    Для ZZ=01 и ZZ=11(недокументированные инструкции)
 
@@ -52,208 +62,179 @@ public class Proc {
 	    Для ZZ=10
 
 		000   immed
-		001   zp
 		010   impl
-		011   abs
 		100   ИНВАЛИД/КРЕШ
-		101   zp,x
 		110   impl
-		111   abs,x
 	*/
 	/*
 	    Для ZZ=00
 
 		000   immed
-		001   zp
 		010   impl
-		011   abs
 		100   rel(инструкции перехода)
-		101   zp,x
 		110   impl
-		111   abs,x
 	*/
 
-
+        short opAddr = 0;
         Byte operlo = 0;
         switch (addrmode) {
             case 0:
-                opAddr =&NESMem[0][255 & (regX + opCodes[regPC++])];
-                operlo =*opAddr;
+                opAddr = (short)(255 & (regX + m.getMemAt(regPC++)));
+                operlo = m.getMemAt(opAddr);
                 break;
             case 1:
-                opAddr =&NESMem[0][opCodes[regPC++]];
-                operlo =*opAddr;
+                opAddr = m.getMemAt(regPC++);
+                operlo = m.getMemAt(opAddr);
                 break;
             case 2:
-                opAddr = (Byte *) & opCodes[regPC++];
-                operlo =*opAddr;
+                opAddr = regPC++;
+                operlo = m.getMemAt(opAddr);
                 break;
             case 3:
-                opAddr =&NESMem[opCodes[regPC + 1]][opCodes[regPC]];
-                operlo =*opAddr;
+                opAddr = (short)(m.getMemAt(regPC)|m.getMemAt((short)(regPC+1))<<8);
+                operlo = m.getMemAt(opAddr);
                 regPC += 2;
                 break;
-            case 4: {
-                WORD addr;
-                addr =*((WORD *) & NESMem[0][opCodes[regPC++]]) + regY;
-                Byte addrlo = addr >> 8, addrhi = addr & 255;
-                opAddr =&NESMem[addrhi][addrlo];
-                operlo =*opAddr;
-            }
-            break;
+            case 4:
+                opAddr = (short)(m.getMemAtW(m.getMemAt(regPC++).shortValue()) + regY);
+                operlo = m.getMemAt(opAddr);
+                break;
             case 5:
-                opAddr =&NESMem[0][255 & (opCodes[regPC] + (opCodes[regPC - 1] == 0x96 || opCodes[regPC - 1] == 0xB6 ? regY : regX))];
+                byte pc_i = m.getMemAt((short)(regPC - 1)), pc_0 = m.getMemAt(regPC);
+                opAddr = m.getMemAt((short)(255 & (pc_0 + (pc_i == 0x96 || pc_i == 0xB6 ? regY : regX))));
                 regPC++;
-                operlo =*opAddr;
+                operlo = m.getMemAt(opAddr);
                 break;
-            case 6: {
-                WORD addr = regY +*(WORD *) & NESMem[opCodes[regPC + 1]][opCodes[regPC]];
+            case 6:
+                opAddr = (short)(regY + m.getMemAtW( (short)(m.getMemAt(regPC)|m.getMemAt((short)(regPC+1))<<8) ));
                 regPC += 2;
-                Byte addrlo = addr >> 8, addrhi = addr & 255;
-                opAddr =&NESMem[addrhi][addrlo];
-                operlo =*opAddr;
-            }
-            break;
-            case 7: {
-                WORD addr = regX +*(WORD *) & NESMem[opCodes[regPC + 1]][opCodes[regPC]];
+                operlo = m.getMemAt(opAddr);
+                break;
+            case 7:
+                opAddr = (short)(regX + m.getMemAtW( (short)(m.getMemAt(regPC)|m.getMemAt((short)(regPC+1))<<8) ));
                 regPC += 2;
-                Byte addrlo = addr >> 8, addrhi = addr & 255;
-                opAddr =&NESMem[addrhi][addrlo];
-                operlo =*opAddr;
-            }
-            break;
+                operlo = m.getMemAt(opAddr);
+                break;
         }
         return operlo;
     }
 
 
-    int _tmain(int argc, _TCHAR*argv[]) {
-        regA = regX = regY = regS = 0;
-        regPC = 0;
-        ZeroMemory( & regP, sizeof(regP));
+    void Step()
+    {
         // LDA FF, TAX, INX, STA 1,X, LDY #0
         //char* opcodes = "\xA9\xFE\xAA\xE8\x95\x01\xA4\x00";
-        char opcodes[ 1000];
-        wscanf_s(L"%02x %04x", opcodes + regPC, opcodes + regPC + 1);
-        while (opcodes[regPC]) {
-            BYTE command = opcodes[regPC++];
-            wprintf(L"command: %02x\n", command);
-            BYTE oper = 0;
-            BYTE * opaddr = NULL;
-            // XXXYYYZZ
-            // XXX: код команды
-            // YYY: режим адресации
-            // ZZ: класс команды
+       
+        byte command = m.getMemAt(regPC++);
+        log.log(Level.FINE, "command: %02x\n" + Integer.toHexString(command));
 
-            BYTE addrmode = (command >> 2) & 7;
-            BYTE comcode = (command >> 5) & 7;
-            BYTE comclass = command & 3;
+        byte oper = 0;
+        Short opaddr = 0;
 
-            // interpret command's code to ascertain addressing mode
-            switch (comclass) {
-                case 3:
-                    //undocumented
-                    break;
-                case 2:
-                    if (!(addrmode & 1)) break;
-                    //commands either work as expected or halt/nop
-                case 1:
-                    wprintf(L"operand: %02x(+second byte %02x) ", int(opcodes[regPC]), int(opcodes[regPC + 1]));
-                    oper = takeoper(opcodes, addrmode, opaddr);
-                    wprintf(L"decoded: %02x\n", oper);
-                    break;
-                case 0:
-                    if (comcode != 0 && ((addrmode & 1) || (comcode >= 5 && !addrmode))) {
-                        wprintf(L"operand: %02x(+second byte %02x) ", int(opcodes[regPC]), int(opcodes[regPC + 1]));
-                        oper = takeoper(opcodes, addrmode, opaddr);
-                        wprintf(L"decoded: %02x\n", oper);
-                    }
-                    break;
-            }
-            wprintf(L"executing ");
-            // exec command
-            switch (comclass) {
-                case 0:
-                    switch (comcode) {
-                        case 5:
-                            switch (addrmode) {
-                                case 0:
-                                case 1:
-                                case 3:
-                                case 5:
-                                case 7:
-                                    wprintf(L"LDY. M(%02x) => Y(%02x)", oper, regY);
-                                    regY = oper;
-                                    break;
-                                case 2:
-                                    wprintf(L"TAY. A(%02x) => Y(%02x)", regA, regY);
-                                    regY = regA;
-                                    break;
-                            }
-                            break;
-                        case 6:
-                            switch (addrmode) {
-                                case 2:
-                                    regY++;
-                                    wprintf(L"INY. result: %02x", regY);
-                                    break;
-                            }
-                        case 7:
-                            switch (addrmode) {
-                                case 2:
-                                    regX++;
-                                    wprintf(L"INX. result: %02x", regX);
-                                    break;
-                            }
-                    }
-                    break;
-                case 1:
-                    switch (comcode) {
-                        case 4:
-                            wprintf(L"STA. A(%02x) => M(%02x)", regA, * opaddr);
-        *opaddr = regA;
-                            break;
-                        case 5:
-                            regA = BYTE(oper);
-                            wprintf(L"LDA. operand: %02x", regA);
-                            break;
+        // XXXYYYZZ
+        // XXX: код команды
+        // YYY: режим адресации
+        // ZZ: класс команды
 
-                    }
-                    break;
-                case 2:
-                    switch (comcode) {
-                        case 5:
-                            switch (addrmode) {
-                                case 0:
-                                case 1:
-                                case 3:
-                                case 5:
-                                case 7:
-                                    wprintf(L"LDX. M(%02x) => X(%02x)", oper, regX);
-                                    regX = oper;
-                                    break;
-                                case 2:
-                                    wprintf(L"TAX. A(%02x) => X(%02x)", regA, regX);
-                                    regX = regA;
-                                    break;
-                            }
-                            break;
-                        case 7:
-                            if (addrmode & 1) {
-                                ( * opaddr)++;
-                                wprintf(L"INC. result: %02x", ( * opaddr));
-                            } else
-                                wprintf(L"NOP");
-                            break;
-                    }
-            }
-            wprintf(L"\n\n");
-            wscanf_s(L"%02x %04x", opcodes + regPC, opcodes + regPC + 1);
+        int addrmode = (command >> 2) & 7;
+        int comcode = (command >> 5) & 7;
+        int comclass = command & 3;
+
+        // interpret command's code to ascertain addressing mode
+        switch (comclass) {
+            case 2:
+                //if ((addrmode & 1)==0) break;
+                //commands either work as expected or halt/nop
+            case 0:
+                if (comcode == 0 || ((addrmode & 1)==0 && (comcode < 5 || addrmode!=0))) break;
+                //if (comcode != 0 && ((addrmode & 1) || (comcode >= 5 && !addrmode))) {
+            case 3:
+                //undocumented
+            case 1:
+                log.log(Level.FINE, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short)(regPC + 1))));
+                // TODO: как передавать opaddr как ссылку?????????
+                oper = takeoper(addrmode, opaddr);
+                log.log(Level.FINE, String.format("decoded: %02x\n", oper));
+                break;
         }
-        wprintf(L"terminated. A: %02x, X: %02x, Y: %02x, PC: %04x, S: %02x", regA, regX, regY, regPC, regS);
-        while (1) ;
-        return 0;
+        log.log(Level.FINE, "executing ");
+        // exec command
+        switch (comclass) {
+            case 0:
+                switch (comcode) {
+                    case 5:
+                        switch (addrmode) {
+                            case 0:
+                            case 1:
+                            case 3:
+                            case 5:
+                            case 7:
+                                log.log(Level.FINE, String.format("LDY. M(%02x) => Y(%02x)", oper, regY));
+                                regY = oper;
+                                break;
+                            case 2:
+                                log.log(Level.FINE, String.format("TAY. A(%02x) => Y(%02x)", regA, regY));
+                                regY = regA;
+                                break;
+                        }
+                        break;
+                    case 6:
+                        switch (addrmode) {
+                            case 2:
+                                regY++;
+                                log.log(Level.FINE, String.format("INY. result: %02x", regY));
+                                break;
+                        }
+                    case 7:
+                        switch (addrmode) {
+                            case 2:
+                                regX++;
+                                log.log(Level.FINE, String.format("INX. result: %02x", regX));
+                                break;
+                        }
+                }
+                break;
+            case 1:
+                switch (comcode) {
+                    case 4:
+                        log.log(Level.FINE, String.format("STA. A(%02x) => M(%02x)", regA, oper));
+                        m.setMemAt(opaddr, regA);
+                        break;
+                    case 5:
+                        regA = (byte)oper;
+                        log.log(Level.FINE, String.format("LDA. operand: %02x", regA));
+                        break;
+
+                }
+                break;
+            case 2:
+                switch (comcode) {
+                    case 5:
+                        switch (addrmode) {
+                            case 0:
+                            case 1:
+                            case 3:
+                            case 5:
+                            case 7:
+                                log.log(Level.FINE, String.format("LDX. M(%02x) => X(%02x)", oper, regX));
+                                regX = oper;
+                                break;
+                            case 2:
+                                log.log(Level.FINE, String.format("TAX. A(%02x) => X(%02x)", regA, regX));
+                                regX = regA;
+                                break;
+                        }
+                        break;
+                    case 7:
+                        if ((addrmode & 1) !=0) {
+                            m.setMemAt(opaddr, (byte)(oper+1));
+                            log.log(Level.FINE, String.format("INC. result: %02x", m.getMemAt(opaddr)));
+                        } else
+                            log.log(Level.FINE, "NOP");
+                        break;
+                }
+        }
+        log.log(Level.FINE, "\n");
+        log.log(Level.FINE, String.format("terminated. A: %02x, X: %02x, Y: %02x, PC: %04x, S: %02x", regA, regX, regY, regPC, regS));
     }
-
-
 }

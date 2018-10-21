@@ -54,8 +54,8 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
     Short getMemAtW(Short addr)
     {
         Short lo = getMemAt(addr).shortValue();
-        Short hi = getMemAt(++addr).shortValue();
-        return (short)((lo<<8) | hi);
+        Short hi = getMemAt((short)(addr+1)).shortValue();
+        return (short)((hi<<8) | lo);
     }
 
     Short getMemAtWarpedW(Short addr)
