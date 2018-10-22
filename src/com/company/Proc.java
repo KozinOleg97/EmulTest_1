@@ -38,6 +38,8 @@ public class Proc {
         regA = regX = regY = regS = 0;
         regPC = 0;
         m=mem;
+        log = Logger.getLogger("proc.java");
+        log.setLevel(Level.ALL);
     }
 
 
@@ -126,7 +128,7 @@ public class Proc {
         //char* opcodes = "\xA9\xFE\xAA\xE8\x95\x01\xA4\x00";
        
         byte command = m.getMemAt(regPC++);
-        log.log(Level.FINE, "command: %02x\n" + Integer.toHexString(command));
+        log.log(Level.INFO, String.format("command: %02x\n", command));
 
         byte oper = 0;
         Short opaddr = 0;
@@ -151,13 +153,13 @@ public class Proc {
             case 3:
                 //undocumented
             case 1:
-                log.log(Level.FINE, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short)(regPC + 1))));
+                log.log(Level.INFO, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short)(regPC + 1))));
                 // TODO: как передавать opaddr как ссылку?????????
                 oper = takeoper(addrmode, opaddr);
-                log.log(Level.FINE, String.format("decoded: %02x\n", oper));
+                log.log(Level.INFO, String.format("decoded: %02x", oper));
                 break;
         }
-        log.log(Level.FINE, "executing ");
+        log.log(Level.INFO, "executing ");
         // exec command
         switch (comclass) {
             case 0:
@@ -169,11 +171,11 @@ public class Proc {
                             case 3:
                             case 5:
                             case 7:
-                                log.log(Level.FINE, String.format("LDY. M(%02x) => Y(%02x)", oper, regY));
+                                log.log(Level.INFO, String.format("LDY. M(%02x) => Y(%02x)", oper, regY));
                                 regY = oper;
                                 break;
                             case 2:
-                                log.log(Level.FINE, String.format("TAY. A(%02x) => Y(%02x)", regA, regY));
+                                log.log(Level.INFO, String.format("TAY. A(%02x) => Y(%02x)", regA, regY));
                                 regY = regA;
                                 break;
                         }
@@ -182,14 +184,14 @@ public class Proc {
                         switch (addrmode) {
                             case 2:
                                 regY++;
-                                log.log(Level.FINE, String.format("INY. result: %02x", regY));
+                                log.log(Level.INFO, String.format("INY. result: %02x", regY));
                                 break;
                         }
                     case 7:
                         switch (addrmode) {
                             case 2:
                                 regX++;
-                                log.log(Level.FINE, String.format("INX. result: %02x", regX));
+                                log.log(Level.INFO, String.format("INX. result: %02x", regX));
                                 break;
                         }
                 }
@@ -197,12 +199,12 @@ public class Proc {
             case 1:
                 switch (comcode) {
                     case 4:
-                        log.log(Level.FINE, String.format("STA. A(%02x) => M(%02x)", regA, oper));
+                        log.log(Level.INFO, String.format("STA. A(%02x) => M(%02x)", regA, oper));
                         m.setMemAt(opaddr, regA);
                         break;
                     case 5:
                         regA = (byte)oper;
-                        log.log(Level.FINE, String.format("LDA. operand: %02x", regA));
+                        log.log(Level.INFO, String.format("LDA. operand: %02x", regA));
                         break;
 
                 }
@@ -216,11 +218,11 @@ public class Proc {
                             case 3:
                             case 5:
                             case 7:
-                                log.log(Level.FINE, String.format("LDX. M(%02x) => X(%02x)", oper, regX));
+                                log.log(Level.INFO, String.format("LDX. M(%02x) => X(%02x)", oper, regX));
                                 regX = oper;
                                 break;
                             case 2:
-                                log.log(Level.FINE, String.format("TAX. A(%02x) => X(%02x)", regA, regX));
+                                log.log(Level.INFO, String.format("TAX. A(%02x) => X(%02x)", regA, regX));
                                 regX = regA;
                                 break;
                         }
@@ -228,13 +230,13 @@ public class Proc {
                     case 7:
                         if ((addrmode & 1) !=0) {
                             m.setMemAt(opaddr, (byte)(oper+1));
-                            log.log(Level.FINE, String.format("INC. result: %02x", m.getMemAt(opaddr)));
+                            log.log(Level.INFO, String.format("INC. result: %02x", m.getMemAt(opaddr)));
                         } else
-                            log.log(Level.FINE, "NOP");
+                            log.log(Level.INFO, "NOP");
                         break;
                 }
         }
-        log.log(Level.FINE, "\n");
-        log.log(Level.FINE, String.format("terminated. A: %02x, X: %02x, Y: %02x, PC: %04x, S: %02x", regA, regX, regY, regPC, regS));
+        log.log(Level.INFO, "\n");
+        log.log(Level.INFO, String.format("terminated. A: %02x, X: %02x, Y: %02x, PC: %04x, S: %02x", regA, regX, regY, regPC, regS));
     }
 }
