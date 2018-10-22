@@ -111,6 +111,7 @@ public class Graphics {
         glPopMatrix();
     }
 
+
     private void loop() {
         // This line is critical for LWJGL's interoperation with GLFW's
         // OpenGL context, or any context that is managed externally.
@@ -148,10 +149,13 @@ public class Graphics {
 
         int x = 5, y = 5;
         int h = 20, w = 20;
-        int xi = 5, yi = 5;
+        int xi = 10, yi = 10;
 
         int tx = 300, ty = 200;
 
+
+        double lastTime = glfwGetTime();
+        int nbFrames = 0;
 
         while (!glfwWindowShouldClose(mainWindow)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
@@ -185,8 +189,21 @@ public class Graphics {
             // Poll for mainWindow events. The key callback above will only be
             // invoked during this call.
             glfwPollEvents();
+
+
+            // Measure speed(fps)
+            double currentTime = glfwGetTime();
+            nbFrames++;
+            if (currentTime - lastTime >= 1.0) {
+                // printf and reset timer
+                System.out.println(1000.0 / (nbFrames) + "(" + nbFrames + ")");
+                nbFrames = 0;
+                lastTime += 1.0;
+            }
+
+
         }
+
+
     }
-
-
 }
