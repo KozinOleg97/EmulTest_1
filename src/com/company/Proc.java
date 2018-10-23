@@ -19,15 +19,22 @@ public class Proc {
 
     private Logger log;
 
-    private class regP {
         private byte C; //:1; // carry
         private byte Z; //:1; // zero
         private byte I; //:1; // interrupt 0==enabled
         private byte D; //:1; // decimal mode
-        private byte B; //:1; // currently in break(BRK) interrupt
-        private byte NU; //:1; // always 1
+        //private byte B; //:1; // currently in break(BRK) interrupt
+        //private byte NU; //:1; // always 1
         private byte V; //:1; // oVerflow
         private byte N; //:1; // negative(?)
+
+
+    public void setZ(byte z) {
+        Z = (byte)(z==0?1:0);
+    }
+
+    public void setN(byte n) {
+        N = (byte)((n&0x80)==0?0:1);
     }
 
     private Memory m;
@@ -118,6 +125,8 @@ public class Proc {
                 operlo = m.getMemAt(opAddr);
                 break;
         }
+        // TODO: ниработаиттт
+        opAddrL=opAddr;
         return operlo;
     }
 
@@ -173,10 +182,14 @@ public class Proc {
                             case 7:
                                 log.log(Level.INFO, String.format("LDY. M(%02x) => Y(%02x)", oper, regY));
                                 regY = oper;
+                                setZ(oper);
+                                setN(oper);
                                 break;
                             case 2:
                                 log.log(Level.INFO, String.format("TAY. A(%02x) => Y(%02x)", regA, regY));
                                 regY = regA;
+                                setZ(regY);
+                                setN(regY);
                                 break;
                         }
                         break;
@@ -185,6 +198,8 @@ public class Proc {
                             case 2:
                                 regY++;
                                 log.log(Level.INFO, String.format("INY. result: %02x", regY));
+                                setZ(regY);
+                                setN(regY);
                                 break;
                         }
                     case 7:
@@ -192,6 +207,8 @@ public class Proc {
                             case 2:
                                 regX++;
                                 log.log(Level.INFO, String.format("INX. result: %02x", regX));
+                                setZ(regX);
+                                setN(regX);
                                 break;
                         }
                 }
@@ -205,12 +222,36 @@ public class Proc {
                     case 5:
                         regA = (byte)oper;
                         log.log(Level.INFO, String.format("LDA. operand: %02x", regA));
+                        setZ(oper);
+                        setN(oper);
                         break;
 
                 }
                 break;
             case 2:
                 switch (comcode) {
+                    case 4:
+                        switch(addrmode)
+                        {
+                            case 1:
+                            case 3:
+                            case 5:
+                            case 7:
+                                log.log(Level.INFO, String.format("STX. X(%02x) => M(%02x)", regX, oper));
+                                m.setMemAt(opaddr, regX);
+                                break;
+                            case 2:
+                                log.log(Level.INFO, String.format("TXA. X(%02x) => A(%02x)", regX, regA));
+                                regA=regX;
+                                setZ(regA);
+                                setN(regA);
+                                break;
+                            case 4:
+                                log.log(Level.INFO, String.format("TXS. X(%02x) => S(%02x)", regX, regS));
+                                regS=regX;
+                                break;
+                        }
+                        break;
                     case 5:
                         switch (addrmode) {
                             case 0:
@@ -220,10 +261,14 @@ public class Proc {
                             case 7:
                                 log.log(Level.INFO, String.format("LDX. M(%02x) => X(%02x)", oper, regX));
                                 regX = oper;
+                                setZ(regX);
+                                setN(regX);
                                 break;
                             case 2:
                                 log.log(Level.INFO, String.format("TAX. A(%02x) => X(%02x)", regA, regX));
                                 regX = regA;
+                                setZ(regX);
+                                setN(regX);
                                 break;
                         }
                         break;
@@ -231,6 +276,8 @@ public class Proc {
                         if ((addrmode & 1) !=0) {
                             m.setMemAt(opaddr, (byte)(oper+1));
                             log.log(Level.INFO, String.format("INC. result: %02x", m.getMemAt(opaddr)));
+                            setZ(oper);
+                            setN(oper);
                         } else
                             log.log(Level.INFO, "NOP");
                         break;
