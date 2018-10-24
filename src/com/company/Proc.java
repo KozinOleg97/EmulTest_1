@@ -173,6 +173,52 @@ public class Proc {
         switch (comclass) {
             case 0:
                 switch (comcode) {
+                    case 0:
+                        switch(addrmode)
+                        {
+                            case 6:
+                                log.log(Level.INFO, String.format("CLC. C(%02x)", C));
+                                C=0;
+                                break;
+                        }
+                        break;
+                    case 1:
+                        switch(addrmode)
+                        {
+                            case 6:
+                                log.log(Level.INFO, String.format("SEC. C(%02x)", C));
+                                C=1;
+                                break;
+                        }
+                        break;
+                    case 2:
+                        switch (addrmode)
+                        {
+                            case 6:
+                                log.log(Level.INFO, String.format("CLI. I(%02x)", I));
+                                I=0;
+                                break;
+                        }
+                        break;
+                    case 3:
+                        switch(addrmode)
+                        {
+                            case 6:
+                                log.log(Level.INFO, String.format("SEI. I(%02x)", I));
+                                I=1;
+                                break;
+                        }
+                        break;
+                    case 4:
+                        switch(addrmode)
+                        {
+                            case 6:
+                                log.log(Level.INFO, String.format("TYA. Y(%02x) => A(%02x)", regY, regA));
+                                regA = regY;
+                                setZ(regA);
+                                setN(regA);
+                                break;
+                        }
                     case 5:
                         switch (addrmode) {
                             case 0:
@@ -202,6 +248,7 @@ public class Proc {
                                 setN(regY);
                                 break;
                         }
+                        break;
                     case 7:
                         switch (addrmode) {
                             case 2:
