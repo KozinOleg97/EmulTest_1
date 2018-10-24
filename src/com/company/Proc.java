@@ -54,7 +54,7 @@ public class Proc {
     // addrmode - три бита, выдранные из инструкции
     // Выход: opAddr - адрес операнда
     // Результат: содержимое операнда
-    byte takeoper(int addrmode, Short opAddrL) {
+    short takeoperaddr(int addrmode) {
 	/*
 	    Для ZZ=01 и ZZ=11(недокументированные инструкции)
 
@@ -125,9 +125,7 @@ public class Proc {
                 operlo = m.getMemAt(opAddr);
                 break;
         }
-        // TODO: ниработаиттт
-        opAddrL=opAddr;
-        return operlo;
+        return opAddr;
     }
 
 
@@ -164,7 +162,8 @@ public class Proc {
             case 1:
                 log.log(Level.INFO, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short)(regPC + 1))));
                 // TODO: как передавать opaddr как ссылку?????????
-                oper = takeoper(addrmode, opaddr);
+                opaddr = takeoperaddr(addrmode);
+                oper = m.getMemAt(opaddr);
                 log.log(Level.INFO, String.format("decoded: %02x", oper));
                 break;
         }
