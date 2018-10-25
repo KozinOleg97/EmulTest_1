@@ -263,9 +263,12 @@ public class Proc {
                 switch (comcode) {
                     case 3:
                         log.log(Level.INFO, String.format("ADC. M(%02x) +> A(%02x)", oper, regA));
-                        int intermediate = (regA+oper+C);
-                        if(intermediate<regA || intermediate<oper) C=1; else C=0;
+                        // bytes get sign-extended into ints. mask the lowest byte to get carry
+                        int intermediate = ((regA&0xff)+(oper&0xff)+C);
+                        C = (byte)(intermediate>>8);
                         regA = (byte)intermediate;
+                        //Overflow occurs if (M^result)&(N^result)&0x80 is nonzero. That is, if the sign of both inputs is different from the sign of the result.
+                        V = (byte)(((regA^intermediate)&(oper^intermediate)&80)==0?0:1);
                         setZ(regA);
                         setN(regA);
                         break;
@@ -278,6 +281,22 @@ public class Proc {
                         log.log(Level.INFO, String.format("LDA. operand: %02x", regA));
                         setZ(oper);
                         setN(oper);
+                        break;
+                    case 7:
+                        log.log(Level.INFO, String.format("SBC. M(%02x) -> A(%02x)", oper, regA));
+                        // http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
+                        // bytes get sign-extended into ints. mask the lowest byte to get borrow.
+                        // borrow is complement of carry. 1^1=0; 1^0=1
+                        // M - N - B
+                        // = M + (ones complement of N) + C
+                        int sbcinterm = ((regA&0xff)+(~oper&0xff)+C);
+                        // get borrow value, and for safety, xor to get carry
+                        C = (byte)(sbcinterm>>8&1);
+                        //Overflow occurs if (M^result)&(N^result)&0x80 is nonzero. That is, if the sign of both inputs is different from the sign of the result.
+                        V = (byte)(((regA^sbcinterm)&(~oper^sbcinterm)&0x80)==0?0:1);
+                        regA = (byte)sbcinterm;
+                        setZ(regA);
+                        setN(regA);
                         break;
 
                 }
