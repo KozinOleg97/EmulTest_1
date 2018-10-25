@@ -261,6 +261,14 @@ public class Proc {
                 break;
             case 1:
                 switch (comcode) {
+                    case 3:
+                        log.log(Level.INFO, String.format("ADC. M(%02x) +> A(%02x)", oper, regA));
+                        int intermediate = (regA+oper+C);
+                        if(intermediate<regA || intermediate<oper) C=1; else C=0;
+                        regA = (byte)intermediate;
+                        setZ(regA);
+                        setN(regA);
+                        break;
                     case 4:
                         log.log(Level.INFO, String.format("STA. A(%02x) => M(%02x)", regA, oper));
                         m.setMemAt(opaddr, regA);
