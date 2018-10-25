@@ -261,6 +261,24 @@ public class Proc {
                 break;
             case 1:
                 switch (comcode) {
+                    case 0:
+                        log.log(Level.INFO, String.format("ORA. M(%02x) |> A(%02x)", oper, regA));
+                        regA |= oper;
+                        setZ(oper);
+                        setN(oper);
+                        break;
+                    case 1:
+                        log.log(Level.INFO, String.format("AND. M(%02x) &> A(%02x)", oper, regA));
+                        regA &= oper;
+                        setZ(oper);
+                        setN(oper);
+                        break;
+                    case 2:
+                        log.log(Level.INFO, String.format("EOR. M(%02x) ^> A(%02x)", oper, regA));
+                        regA ^= oper;
+                        setZ(oper);
+                        setN(oper);
+                        break;
                     case 3:
                         log.log(Level.INFO, String.format("ADC. M(%02x) +> A(%02x)", oper, regA));
                         // bytes get sign-extended into ints. mask the lowest byte to get carry
@@ -282,6 +300,14 @@ public class Proc {
                         setZ(oper);
                         setN(oper);
                         break;
+                    case 6:
+                        log.log(Level.INFO, String.format("CMP. M(%02x) <> A(%02x)", oper, regA));
+                        int cmp = ((regA&0xff)-(oper&0xff));
+                        byte cmpb = (byte)cmp;
+                        C = (byte)(cmp>>8&1);
+                        setZ(cmpb);
+                        setN(cmpb);
+                        break;
                     case 7:
                         log.log(Level.INFO, String.format("SBC. M(%02x) -> A(%02x)", oper, regA));
                         // http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
@@ -290,7 +316,7 @@ public class Proc {
                         // M - N - B
                         // = M + (ones complement of N) + C
                         int sbcinterm = ((regA&0xff)+(~oper&0xff)+C);
-                        // get borrow value, and for safety, xor to get carry
+                        // get borrow value
                         C = (byte)(sbcinterm>>8&1);
                         //Overflow occurs if (M^result)&(N^result)&0x80 is nonzero. That is, if the sign of both inputs is different from the sign of the result.
                         V = (byte)(((regA^sbcinterm)&(~oper^sbcinterm)&0x80)==0?0:1);
