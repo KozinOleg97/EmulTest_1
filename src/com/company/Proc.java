@@ -184,6 +184,15 @@ public class Proc {
                     case 1:
                         switch(addrmode)
                         {
+                            case 1:
+                            case 3:
+                                log.log(Level.INFO, String.format("BIT. M(%02x) <&> A(%02x)", oper, regA));
+                                int bitimterm = regA&oper&0xFF;
+                                byte bitimtermb = (byte)bitimterm;
+                                setZ(bitimtermb);
+                                setN(bitimtermb);
+                                V = (byte)((bitimterm&0x40)==0?0:1);
+                                break;
                             case 6:
                                 log.log(Level.INFO, String.format("SEC. C(%02x)", C));
                                 C=1;
@@ -211,6 +220,18 @@ public class Proc {
                     case 4:
                         switch(addrmode)
                         {
+                            case 1:
+                            case 3:
+                            case 5:
+                                log.log(Level.INFO, String.format("STY. Y(%02x) => M(%02x)", regY, oper));
+                                m.setMemAt(opaddr, regY);
+                                break;
+                            case 2:
+                                regY--;
+                                log.log(Level.INFO, String.format("DEY. result: %02x", regY));
+                                setZ(regY);
+                                setN(regY);
+                                break;
                             case 6:
                                 log.log(Level.INFO, String.format("TYA. Y(%02x) => A(%02x)", regY, regA));
                                 regA = regY;
@@ -227,14 +248,18 @@ public class Proc {
                             case 7:
                                 log.log(Level.INFO, String.format("LDY. M(%02x) => Y(%02x)", oper, regY));
                                 regY = oper;
-                                setZ(oper);
-                                setN(oper);
+                                setZ(regY);
+                                setN(regY);
                                 break;
                             case 2:
                                 log.log(Level.INFO, String.format("TAY. A(%02x) => Y(%02x)", regA, regY));
                                 regY = regA;
                                 setZ(regY);
                                 setN(regY);
+                                break;
+                            case 6:
+                                log.log(Level.INFO, String.format("CLV. V(%02x)", V));
+                                V=0;
                                 break;
                         }
                         break;
@@ -264,20 +289,20 @@ public class Proc {
                     case 0:
                         log.log(Level.INFO, String.format("ORA. M(%02x) |> A(%02x)", oper, regA));
                         regA |= oper;
-                        setZ(oper);
-                        setN(oper);
+                        setZ(regA);
+                        setN(regA);
                         break;
                     case 1:
                         log.log(Level.INFO, String.format("AND. M(%02x) &> A(%02x)", oper, regA));
                         regA &= oper;
-                        setZ(oper);
-                        setN(oper);
+                        setZ(regA);
+                        setN(regA);
                         break;
                     case 2:
                         log.log(Level.INFO, String.format("EOR. M(%02x) ^> A(%02x)", oper, regA));
                         regA ^= oper;
-                        setZ(oper);
-                        setN(oper);
+                        setZ(regA);
+                        setN(regA);
                         break;
                     case 3:
                         log.log(Level.INFO, String.format("ADC. M(%02x) +> A(%02x)", oper, regA));
