@@ -42,13 +42,6 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
         return INSTANCE;
     }
 
-    private int qwe = 0;
-
-    public void hello() {
-        qwe++;
-        System.out.println("Hello " + qwe);
-
-    }
 
     Byte getMemAt(Short addr) {
         switch (addr & 0xF000) {
