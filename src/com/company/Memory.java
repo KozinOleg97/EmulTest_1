@@ -3,7 +3,10 @@ package com.company;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Memory {
+public enum Memory {
+    INSTANCE;
+
+
 
     /*
     Address range	Size	Device
@@ -34,6 +37,19 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
 
     Memory() {
         mainMemory = new Byte[8 * 256];
+    }
+
+
+    public static Memory getInstance() {
+        return INSTANCE;
+    }
+
+    private int qwe = 0;
+
+    public void hello() {
+        qwe++;
+        System.out.println("Hello " + qwe);
+
     }
 
     Byte getMemAt(Short addr) {
