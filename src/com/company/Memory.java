@@ -7,7 +7,6 @@ public enum Memory {
     INSTANCE;
 
 
-
     /*
     Address range	Size	Device
 $0000-$07FF	$0800	2KB internal RAM
@@ -38,7 +37,6 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
     Memory() {
         mainMemory = new Byte[8 * 256];
     }
-
 
     public static Memory getInstance() {
         return INSTANCE;
