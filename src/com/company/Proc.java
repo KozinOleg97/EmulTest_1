@@ -120,7 +120,8 @@ public class Proc {
                 operlo = m.getMemAt(opAddr);
                 break;
             case 7:
-                opAddr = (short)(regX + m.getMemAtW( (short)(m.getMemAt(regPC)|m.getMemAt((short)(regPC+1))<<8) ));
+                pc_i = m.getMemAt((short)(regPC - 1));
+                opAddr = (short)((pc_i==0xBE?regY:regX) + m.getMemAtW( (short)(m.getMemAt(regPC)|m.getMemAt((short)(regPC+1))<<8) ));
                 regPC += 2;
                 operlo = m.getMemAt(opAddr);
                 break;
@@ -354,13 +355,101 @@ public class Proc {
                 break;
             case 2:
                 switch (comcode) {
-                    case 4:
+                    case 0:
                         switch(addrmode)
                         {
                             case 1:
                             case 3:
                             case 5:
                             case 7:
+                                log.log(Level.INFO, String.format("ASL. M: %02x", oper));
+                                m.setMemAt(opaddr, oper<<=1);
+                                setZ(oper);
+                                setN(oper);
+                                break;
+                            case 2:
+                                log.log(Level.INFO, String.format("ASL. A: %02x", regA));
+                                regA<<=1;
+                                setZ(regA);
+                                setN(regA);
+                                break;
+                        }
+                        break;
+                    case 1:
+                        switch(addrmode)
+                        {
+                            case 1:
+                            case 3:
+                            case 5:
+                            case 7:
+                                log.log(Level.INFO, String.format("ROL. M: %02x", oper));
+                                // to roll left: shift left normally
+                                // shift right 7 then mask the lowest bit (java sign-extends bytes into ints. for negative numbers this means all leftmost bits become 1's)
+                                // operator precedence: <</>> > & > |
+                                oper = (byte)(oper<<1 | oper>>7&0x1);
+                                m.setMemAt(opaddr, oper);
+                                setZ(oper);
+                                setN(oper);
+                                break;
+                            case 2:
+                                log.log(Level.INFO, String.format("ROL. A: %02x", regA));
+                                regA = (byte)(regA<<1 | regA>>7&0x1);
+                                setZ(regA);
+                                setN(regA);
+                                break;
+                        }
+                        break;
+                    case 2:
+                        switch(addrmode)
+                        {
+                            case 1:
+                            case 3:
+                            case 5:
+                            case 7:
+                                log.log(Level.INFO, String.format("ASR. M: %02x", oper));
+                                oper = (byte)((oper&0xff)>>1);
+                                m.setMemAt(opaddr, oper);
+                                setZ(oper);
+                                setN(oper);
+                                break;
+                            case 2:
+                                log.log(Level.INFO, String.format("ASR. A: %02x", regA));
+                                regA = (byte)((regA&0xff)>>1);
+                                setZ(regA);
+                                setN(regA);
+                                break;
+                        }
+                        break;
+                    case 3:
+                        switch(addrmode)
+                        {
+                            case 1:
+                            case 3:
+                            case 5:
+                            case 7:
+                                log.log(Level.INFO, String.format("ROR. M: %02x", oper));
+                                // to roll right: shift right  then mask the lowest 7 bits due to sign-extension
+                                // shift left 7 normally
+                                // operator precedence: <</>> > & > |
+                                oper = (byte)(oper>>1&0x7F | oper<<7);
+                                m.setMemAt(opaddr, oper);
+                                setZ(oper);
+                                setN(oper);
+                                break;
+                            case 2:
+                                log.log(Level.INFO, String.format("ROR. A: %02x", regA));
+                                regA = (byte)(regA>>1&0x7F | regA<<7);
+                                setZ(regA);
+                                setN(regA);
+                                break;
+                        }
+                        break;
+                    case 4:
+                        switch(addrmode)
+                        {
+                            case 1:
+                            case 3:
+                            case 5:
                                 log.log(Level.INFO, String.format("STX. X(%02x) => M(%02x)", regX, oper));
                                 m.setMemAt(opaddr, regX);
                                 break;
@@ -370,7 +459,7 @@ public class Proc {
                                 setZ(regA);
                                 setN(regA);
                                 break;
-                            case 4:
+                            case 6:
                                 log.log(Level.INFO, String.format("TXS. X(%02x) => S(%02x)", regX, regS));
                                 regS=regX;
                                 break;
@@ -394,12 +483,34 @@ public class Proc {
                                 setZ(regX);
                                 setN(regX);
                                 break;
+                            case 6:
+                                log.log(Level.INFO, String.format("TSX. S(%02x) => X(%02x)", regS, regX));
+                                regX=regS;
+                                setZ(regX);
+                                setN(regX);
+                                break;
                         }
+                        break;
+                    case 6:
+                        if ((addrmode & 1) !=0) {
+                            m.setMemAt(opaddr, (byte)(oper-1));
+                            oper = m.getMemAt(opaddr);
+                            log.log(Level.INFO, String.format("DEC. result: %02x", m.getMemAt(opaddr)));
+                            setZ(oper);
+                            setN(oper);
+                        } else if(addrmode==2)
+                        {
+                            regX--;
+                            log.log(Level.INFO, String.format("DEX. result: %02x", regY));
+                            setZ(regX);
+                            setN(regX);
+                        } else log.log(Level.INFO, "NOP");
                         break;
                     case 7:
                         if ((addrmode & 1) !=0) {
                             m.setMemAt(opaddr, (byte)(oper+1));
-                            log.log(Level.INFO, String.format("INC. result: %02x", m.getMemAt(opaddr)));
+                            oper = m.getMemAt(opaddr);
+                            log.log(Level.INFO, String.format("INC. result: %02x", oper));
                             setZ(oper);
                             setN(oper);
                         } else
