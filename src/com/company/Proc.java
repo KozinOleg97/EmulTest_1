@@ -42,7 +42,8 @@ public class Proc {
 
     Proc(Memory mem)
     {
-        regA = regX = regY = regS = 0;
+        regA = regX = regY = 0;
+        regS = (byte)0xFF;
         regPC = 0;
         m=mem;
         log = Logger.getLogger("proc.java");
@@ -156,6 +157,7 @@ public class Proc {
                 //if ((addrmode & 1)==0) break;
                 //commands either work as expected or halt/nop
             case 0:
+                // сложнааааааа
                 if (comcode == 0 || ((addrmode & 1)==0 && (comcode < 5 || addrmode!=0))) break;
                 //if (comcode != 0 && ((addrmode & 1) || (comcode >= 5 && !addrmode))) {
             case 3:
@@ -176,6 +178,13 @@ public class Proc {
                     case 0:
                         switch(addrmode)
                         {
+                            case 2:
+                                short stackaddr = (short)(0x100 + (regS&0xFF));
+                                int P = C | (Z<<1) | (I<<2) | (D<<3) | (1<<5) | (V<<6) | (N<<7);
+                                log.log(Level.INFO, String.format("PHP. P(%02x) => [S](%02x)", P, m.getMemAt(stackaddr)));
+                                m.setMemAt(stackaddr, (byte)(P));
+                                regS--;
+                                break;
                             case 6:
                                 log.log(Level.INFO, String.format("CLC. C(%02x)", C));
                                 C=0;
@@ -194,6 +203,19 @@ public class Proc {
                                 setN(bitimtermb);
                                 V = (byte)((bitimterm&0x40)==0?0:1);
                                 break;
+                            case 2:
+                                regS++;
+                                short stackaddr = (short)(0x100 + (regS&0xFF));
+                                int P = C | (Z<<1) | (I<<2) | (D<<3) | (1<<5) | (V<<6) | (N<<7);
+                                byte NP = m.getMemAt(stackaddr);
+                                log.log(Level.INFO, String.format("PLP. [S](%02x) => P(%02x)", NP, P));
+                                C = (byte)(NP&1);
+                                Z = (byte)(NP>>1&1);
+                                I = (byte)(NP>>2&1);
+                                D = (byte)(NP>>3&1);
+                                V = (byte)(NP>>6&1);
+                                N = (byte)(NP>>7&1);
+                                break;
                             case 6:
                                 log.log(Level.INFO, String.format("SEC. C(%02x)", C));
                                 C=1;
@@ -203,6 +225,12 @@ public class Proc {
                     case 2:
                         switch (addrmode)
                         {
+                            case 2:
+                                short stackaddr = (short)(0x100 + (regS&0xFF));
+                                log.log(Level.INFO, String.format("PHA. A(%02x) => [S](%02x)", regA, m.getMemAt(stackaddr)));
+                                m.setMemAt(stackaddr, regA);
+                                regS--;
+                                break;
                             case 6:
                                 log.log(Level.INFO, String.format("CLI. I(%02x)", I));
                                 I=0;
@@ -212,6 +240,15 @@ public class Proc {
                     case 3:
                         switch(addrmode)
                         {
+                            case 2:
+                                regS++;
+                                short stackaddr = (short)(0x100 + (regS&0xFF));
+                                byte NA = m.getMemAt(stackaddr);
+                                log.log(Level.INFO, String.format("PLA. [S](%02x) => A(%02x)", NA, regA));
+                                regA=NA;
+                                setZ(regA);
+                                setN(regA);
+                                break;
                             case 6:
                                 log.log(Level.INFO, String.format("SEI. I(%02x)", I));
                                 I=1;
