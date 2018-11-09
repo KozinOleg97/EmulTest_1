@@ -19,6 +19,7 @@ public class Proc {
 
     private Logger log;
 
+    // регистр флагов
         private byte C; //:1; // carry
         private byte Z; //:1; // zero
         private byte I; //:1; // interrupt 0==enabled
@@ -29,16 +30,18 @@ public class Proc {
         private byte N; //:1; // negative(?)
 
 
-    public void setZ(byte z) {
+    private void setZ(byte z) {
         Z = (byte)(z==0?1:0);
     }
 
-    public void setN(byte n) {
+    private void setN(byte n) {
         N = (byte)((n&0x80)==0?0:1);
     }
 
-    private Memory m;
+    private void setC(int c) { C = (byte)(c>>8&1);}
 
+
+    private Memory m;
 
     Proc(Memory mem)
     {
@@ -130,6 +133,21 @@ public class Proc {
         return opAddr;
     }
 
+    short takereladdr()
+    {
+        short branchoffset = m.getMemAt(regPC++);
+        int branchaddress = regPC+branchoffset;
+        return (short)branchaddress;
+    }
+
+    void CMP(byte a, byte b)
+    {
+        int cmp = ((a&0xff)-(b&0xff));
+        byte cmpb = (byte)cmp;
+        setC(cmp);
+        setZ(cmpb);
+        setN(cmpb);
+    }
 
     void Step()
     {
@@ -174,13 +192,55 @@ public class Proc {
         // exec command
         switch (comclass) {
             case 0:
+                if(addrmode==4)
+                {
+                    short newaddr = takereladdr();
+                    // рип олег 09.11 земля пухом братишка
+                    int branches[] = {N, V, C, Z};
+                    int branchtaken = comcode&1^1;
+                    branchtaken ^= branches[comcode>>1&3];
+                    /*int branchtaken = 0;
+                    switch(comcode)
+                    {
+                        case 0: //BPL
+                        case 1: //BMI
+                            branchtaken = N;
+                            break;
+                        case 2: //BVC
+                        case 3: //BVS
+                            branchtaken = V;
+                            break;
+                        case 4: //BCC
+                        case 5: //BCS
+                            branchtaken = C;
+                            break;
+                        case 6: //BNE
+                        case 7: //BEQ
+                            branchtaken = Z;
+                            break;
+                    }
+                    if((comcode&1)==0) branchtaken = 1-branchtaken;*/
+                    if(branchtaken==1) regPC=newaddr;
+                    log.log(Level.INFO, String.format("BRANCH. Cond(%02x), TGT", branches[comcode>>1&3], newaddr));
+                } else
                 switch (comcode) {
                     case 0:
                         switch(addrmode)
                         {
-                            case 2:
+                            case 0:
                                 short stackaddr = (short)(0x100 + (regS&0xFF));
-                                int P = C | (Z<<1) | (I<<2) | (D<<3) | (1<<5) | (V<<6) | (N<<7);
+                                int P = C | (Z<<1) | (I<<2) | (D<<3) | (1<<4) | (1<<5) | (V<<6) | (N<<7);
+                                regPC++;
+                                m.setMemAt(stackaddr--, (byte)(regPC>>8));
+                                m.setMemAt(stackaddr--, (byte)regPC);
+                                m.setMemAt(stackaddr, (byte)(P));
+                                regS-=3;
+                                log.log(Level.INFO, String.format("BRK. RET(%02x)", regPC));
+                                regPC = m.getMemAtW((short)0xFFFE);
+                                break;
+                            case 2:
+                                stackaddr = (short)(0x100 + (regS&0xFF));
+                                P = C | (Z<<1) | (I<<2) | (D<<3) | (1<<5) | (V<<6) | (N<<7);
                                 log.log(Level.INFO, String.format("PHP. P(%02x) => [S](%02x)", P, m.getMemAt(stackaddr)));
                                 m.setMemAt(stackaddr, (byte)(P));
                                 regS--;
@@ -194,6 +254,15 @@ public class Proc {
                     case 1:
                         switch(addrmode)
                         {
+                            case 0:
+                                short stackaddr = (short)(0x100 + (regS&0xFF));
+                                short jsraddr = m.getMemAtW(regPC++);
+                                m.setMemAt(stackaddr--, (byte)(regPC>>8));
+                                m.setMemAt(stackaddr, (byte)regPC);
+                                regPC=jsraddr;
+                                regS-=2;
+                                log.log(Level.INFO, String.format("JSR. TGT(%02x)", regPC));
+                                break;
                             case 1:
                             case 3:
                                 log.log(Level.INFO, String.format("BIT. M(%02x) <&> A(%02x)", oper, regA));
@@ -205,7 +274,7 @@ public class Proc {
                                 break;
                             case 2:
                                 regS++;
-                                short stackaddr = (short)(0x100 + (regS&0xFF));
+                                stackaddr = (short)(0x100 + (regS&0xFF));
                                 int P = C | (Z<<1) | (I<<2) | (D<<3) | (1<<5) | (V<<6) | (N<<7);
                                 byte NP = m.getMemAt(stackaddr);
                                 log.log(Level.INFO, String.format("PLP. [S](%02x) => P(%02x)", NP, P));
@@ -225,11 +294,31 @@ public class Proc {
                     case 2:
                         switch (addrmode)
                         {
-                            case 2:
+                            case 0:
+
                                 short stackaddr = (short)(0x100 + (regS&0xFF));
+                                byte NP = m.getMemAt(++stackaddr);
+                                C = (byte)(NP&1);
+                                Z = (byte)(NP>>1&1);
+                                I = (byte)(NP>>2&1);
+                                D = (byte)(NP>>3&1);
+                                V = (byte)(NP>>6&1);
+                                N = (byte)(NP>>7&1);
+                                stackaddr++;
+                                regPC = m.getMemAtW(stackaddr);
+                                regS+=3;
+                                log.log(Level.INFO, String.format("RTI. TGT(%02x)", regPC));
+                                break;
+                            case 2:
+                                stackaddr = (short)(0x100 + (regS&0xFF));
                                 log.log(Level.INFO, String.format("PHA. A(%02x) => [S](%02x)", regA, m.getMemAt(stackaddr)));
                                 m.setMemAt(stackaddr, regA);
                                 regS--;
+                                break;
+                            case 3:
+                                short jumptgt = m.getMemAtW(regPC);
+                                log.log(Level.INFO, String.format("JMP tgt: %04x", jumptgt));
+                                regPC=jumptgt;
                                 break;
                             case 6:
                                 log.log(Level.INFO, String.format("CLI. I(%02x)", I));
@@ -240,14 +329,28 @@ public class Proc {
                     case 3:
                         switch(addrmode)
                         {
-                            case 2:
+                            case 0:
                                 regS++;
                                 short stackaddr = (short)(0x100 + (regS&0xFF));
+                                regPC = m.getMemAtW(stackaddr);
+                                regPC++;
+                                regS++;
+                                log.log(Level.INFO, String.format("RTS. TGT(%02x)", regPC));
+                                break;
+                            case 2:
+                                regS++;
+                                stackaddr = (short)(0x100 + (regS&0xFF));
                                 byte NA = m.getMemAt(stackaddr);
                                 log.log(Level.INFO, String.format("PLA. [S](%02x) => A(%02x)", NA, regA));
                                 regA=NA;
                                 setZ(regA);
                                 setN(regA);
+                                break;
+                            case 3:
+                                short jumptgta = m.getMemAtW(regPC);
+                                short jumptgt = m.getMemAtWarpedW(jumptgta);
+                                log.log(Level.INFO, String.format("JMP tgt: %04x", jumptgt));
+                                regPC=jumptgt;
                                 break;
                             case 6:
                                 log.log(Level.INFO, String.format("SEI. I(%02x)", I));
@@ -303,6 +406,12 @@ public class Proc {
                         break;
                     case 6:
                         switch (addrmode) {
+                            case 0:
+                            case 1:
+                            case 3:
+                                log.log(Level.INFO, String.format("CPY. M(%02x) <> Y(%02x)", oper, regY));
+                                CMP(regY, oper);
+                                break;
                             case 2:
                                 regY++;
                                 log.log(Level.INFO, String.format("INY. result: %02x", regY));
@@ -313,6 +422,12 @@ public class Proc {
                         break;
                     case 7:
                         switch (addrmode) {
+                            case 0:
+                            case 1:
+                            case 3:
+                                log.log(Level.INFO, String.format("CPX. M(%02x) <> X(%02x)", oper, regX));
+                                CMP(regX, oper);
+                                break;
                             case 2:
                                 regX++;
                                 log.log(Level.INFO, String.format("INX. result: %02x", regX));
@@ -346,7 +461,7 @@ public class Proc {
                         log.log(Level.INFO, String.format("ADC. M(%02x) +> A(%02x)", oper, regA));
                         // bytes get sign-extended into ints. mask the lowest byte to get carry
                         int intermediate = ((regA&0xff)+(oper&0xff)+C);
-                        C = (byte)(intermediate>>8);
+                        setC(intermediate);
                         regA = (byte)intermediate;
                         //Overflow occurs if (M^result)&(N^result)&0x80 is nonzero. That is, if the sign of both inputs is different from the sign of the result.
                         V = (byte)(((regA^intermediate)&(oper^intermediate)&80)==0?0:1);
@@ -365,11 +480,7 @@ public class Proc {
                         break;
                     case 6:
                         log.log(Level.INFO, String.format("CMP. M(%02x) <> A(%02x)", oper, regA));
-                        int cmp = ((regA&0xff)-(oper&0xff));
-                        byte cmpb = (byte)cmp;
-                        C = (byte)(cmp>>8&1);
-                        setZ(cmpb);
-                        setN(cmpb);
+                        CMP(regA, oper);
                         break;
                     case 7:
                         log.log(Level.INFO, String.format("SBC. M(%02x) -> A(%02x)", oper, regA));
@@ -380,7 +491,7 @@ public class Proc {
                         // = M + (ones complement of N) + C
                         int sbcinterm = ((regA&0xff)+(~oper&0xff)+C);
                         // get borrow value
-                        C = (byte)(sbcinterm>>8&1);
+                        setC(sbcinterm);
                         //Overflow occurs if (M^result)&(N^result)&0x80 is nonzero. That is, if the sign of both inputs is different from the sign of the result.
                         V = (byte)(((regA^sbcinterm)&(~oper^sbcinterm)&0x80)==0?0:1);
                         regA = (byte)sbcinterm;
