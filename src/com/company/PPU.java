@@ -22,7 +22,8 @@ public class PPU {
     //$3F10-$3F1F Спрайты
     //$3F20-$3FFF	$00E0	Mirrors of $3F00-$3F1F
 
-    //256x240
+    private Integer XSize = 256;    //256x240
+    private Integer YSize = 240;
 
     private Byte[] PPUMemory;
     public Byte[] OAM;   //separate address space
@@ -33,7 +34,11 @@ public class PPU {
 
     private boolean flagSizeOfSprite = true;
 
-    private Byte OAM2Index = 0;
+    private Integer OAM2Index = 0;
+
+    private Integer activSprite = -1;
+
+    private Integer curLine = 0;
 
     PPU() {
         PPUMemory = new Byte[64 * 256]; //16 Kb 16384 Byte
@@ -68,7 +73,7 @@ public class PPU {
         }
 
         Integer nubm = 0;
-        for (int i = 0; i < 256; i = i + 4) {
+        for (int i = 0; i < 256; i = i + 4) { //перебор ОАМ
             if (line - OAM[i] < sizeOfSprite) {
                 nubm++;
                 if (nubm < 9) {
@@ -83,12 +88,56 @@ public class PPU {
 
     }
 
-    private void drawPixel() {
+    private void drawScreen() {
+        for (int i = 0; i < YSize; i++) {
+            drawLine(i);
+        }
+    }
+
+    private void drawLine(Integer curLine) {
+
+        for (int i = 0; i < XSize; i++) {
+            drawPixel(i, curLine);
+        }
+    }
+
+    private void drawPixel(Integer curPixel, Integer curLine) {
+
+        decrementXPosition();
+        if (activSprite != -1) {
+            Integer px = getActiveSpriteNextPixel(curLine);
+            Integer collor = calcPixelColor(px);
+
+            //  drawPPixel()//jframe
+        }
 
     }
 
+    private Integer getActiveSpriteNextPixel(Integer curScreenLine) {//TODO сделать для спрайтов 8х16
 
-    private Byte calcColor(int n, int x, int y) {
+        Integer curSpriteLine = curScreenLine - OAM2[(activSprite * 4) + 3];
+
+        Integer bit1 = PPUMemory[OAM2[(activSprite * 4) + 1] * 16] >> 7 & 1;
+        Integer bit2 = PPUMemory[OAM2[(activSprite * 4) + 1] * 16 + 8] >> 7 & 1;
+        Integer resBit = bit1 | bit2 << 1;
+        return resBit;
+
+    }
+
+    private void decrementXPosition() {
+        for (int i = 0; i < 32; i = i + 4) {
+            //&0xFF  - для преобразования знакового Bite в беззнаковый Integer
+            if (((int) OAM2[i + 3] & 0xFF) == 0) {
+                activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
+
+            } else {
+                OAM2[i]--;
+            }
+        }
+    }
+
+
+    private Integer calcPixelColor(Integer curPx) {
 
 
         return null;
