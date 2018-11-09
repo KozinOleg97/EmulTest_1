@@ -53,10 +53,15 @@ public class PPU {
             OAM2[OAM2Index + i] = OAM[spriteNumb + i];
         }
 
+        OAM2Index++;// +4))))
+        OAM2Index++;
+        OAM2Index++;
+        OAM2Index++;
+
     }
 
 
-    private void chooseSpritesToDraw(Byte line) { //заполняет oam2
+    private void fillOAMM2(Byte line) { //заполняет oam2 c проверкой на перебор спрайтов в линии
         Byte sizeOfSprite = 8;
         if (!flagSizeOfSprite) {
             sizeOfSprite = 16;
