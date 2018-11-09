@@ -1,5 +1,7 @@
 package com.company;
 
+import java.awt.*;
+
 public enum PPU {
     INSTANCE;
 
@@ -40,11 +42,14 @@ public enum PPU {
 
     private Integer curLine = 0;
 
-    private Integer curPalette = 0;
+
+    Palette palette0 = new Palette(Color.GRAY, Color.red, Color.BLUE, Color.ORANGE);
 
 
     PPU() {
         PPUMemory = new Byte[64 * 256]; //16 Kb 16384 Byte
+
+
         OAM = new Byte[256]; //256 Byte; 4 Byte for sprite; sprites 8x8 or 8x16
         OAM2 = new Byte[4 * 8];
 
@@ -111,7 +116,8 @@ public enum PPU {
             Integer px = getActiveSpriteNextPixel(curLine);
             Integer collor = calcPixelColor(px);
 
-            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, collor, curPalette);
+
+            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, collor, palette0);
         }
 
     }

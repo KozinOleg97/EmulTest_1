@@ -11,13 +11,14 @@ public enum SimpleGraphics {
 
     JFrame frame;
     JPanel panel;
+    public Palette palette0;
 
 
-    public Integer[] buffer = new Integer[256 * 240];
+    public Color[] buffer = new Color[256 * 240];
 
     SimpleGraphics() {
 
-        Palette palette1 = new Palette();
+
 
         frame = new JFrame("Emul");
 
@@ -37,16 +38,13 @@ public enum SimpleGraphics {
     }
 
 
-    void addPixel(Integer curPixel, Integer curLine, Integer color, Integer curPalette) {
+    void addPixel(Integer curPixel, Integer curLine, Integer color, Palette curPalette) {
+        buffer[(256 * curLine) + curPixel] = curPalette.getColor(color);
 
     }
 
 
-    public class Palette {
-        Integer[] colors = new Integer[4];
 
-        //Palette()
-    }
 
 
     class GPanel extends JPanel implements ActionListener {
@@ -73,8 +71,18 @@ public enum SimpleGraphics {
 
         public void paint(Graphics g) {
             super.paint(g);
-            g.setColor(Color.red);
-            g.drawRect(x, y, w, h);
+
+            for (int i = 0; i < 256 * 240; i++) {
+                g.setColor(buffer[i]);
+
+                int x = i % 256;
+                int y = i / 256;
+                g.drawLine(x, y, x, y);
+            }
+
+            //g.drawRect(x, y, w, h);
+
+
 
         }
 
