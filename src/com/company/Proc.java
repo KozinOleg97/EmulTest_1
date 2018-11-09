@@ -93,6 +93,7 @@ public class Proc {
         switch (addrmode) {
             case 0:
                 opAddr = (short)(255 & (regX + m.getMemAt(regPC++)));
+                opAddr = (short)m.getMemAtWarpedW(opAddr);
                 operlo = m.getMemAt(opAddr);
                 break;
             case 1:
@@ -109,7 +110,7 @@ public class Proc {
                 regPC += 2;
                 break;
             case 4:
-                opAddr = (short)(m.getMemAtW(m.getMemAt(regPC++).shortValue()) + regY);
+                opAddr = (short)(m.getMemAtWarpedW(m.getMemAt(regPC++).shortValue())+regY);
                 operlo = m.getMemAt(opAddr);
                 break;
             case 5:
@@ -235,6 +236,7 @@ public class Proc {
                                 m.setMemAt(stackaddr--, (byte)regPC);
                                 m.setMemAt(stackaddr, (byte)(P));
                                 regS-=3;
+                                I=1;
                                 log.log(Level.INFO, String.format("BRK. RET(%02x)", regPC));
                                 regPC = m.getMemAtW((short)0xFFFE);
                                 break;
