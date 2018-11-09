@@ -102,7 +102,7 @@ public enum PPU {
 
         Integer nubm = 0;
         for (int i = 0; i < 256; i = i + 4) { //перебор ОАМ
-            if (line - OAM[i] < sizeOfSprite) {
+            if (line > OAM[i] && line < OAM[i] + sizeOfSprite) {
                 nubm++;
                 if (nubm < 9) {
                     loadSpriteToOAM2(i);
