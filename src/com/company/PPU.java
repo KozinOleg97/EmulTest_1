@@ -102,10 +102,11 @@ public enum PPU {
 
         Integer nubm = 0;
         for (int i = 0; i < 256; i = i + 4) { //перебор ОАМ
-            if (line > OAM[i] && line < OAM[i] + sizeOfSprite) {
+            if (line >= OAM[i] && line < OAM[i] + sizeOfSprite) {
                 nubm++;
                 if (nubm < 9) {
                     loadSpriteToOAM2(i);
+
                 } else if (nubm == 9) {
                     ///TODO set overflow flag
                 }
@@ -155,14 +156,18 @@ public enum PPU {
     }
 
     private void decrementXPosition() {
-        for (int i = 0; i < 32; i = i + 4) {
+        for (int i = 0; i < OAM2Index; i = i + 4) {
             //&0xFF  - для преобразования знакового Bite в беззнаковый Integer
+
+
             if (((int) OAM2[i + 3] & 0xFF) == 0) {
                 activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
 
             } else {
                 OAM2[i]--;
             }
+
+
         }
     }
 
