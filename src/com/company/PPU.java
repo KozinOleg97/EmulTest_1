@@ -1,7 +1,7 @@
 package com.company;
 
-public class PPU {
-
+public enum PPU {
+    INSTANCE;
 
     //$2000-$2007	$0008	NES PPU registers
     //$2008-$3FFF	$1FF8	Mirrors of $2000-2007 (repeats every 8 bytes)
@@ -39,6 +39,8 @@ public class PPU {
     private Integer activSprite = -1;
 
     private Integer curLine = 0;
+
+    private Integer curPalette = 0;
 
 
     PPU() {
@@ -109,7 +111,7 @@ public class PPU {
             Integer px = getActiveSpriteNextPixel(curLine);
             Integer collor = calcPixelColor(px);
 
-            //  drawPPixel()//jframe
+            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, collor, curPalette);
         }
 
     }

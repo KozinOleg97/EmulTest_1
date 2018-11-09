@@ -7,7 +7,7 @@ public class Main {
 
 
         // new Graphics().run();
-        new SimpleGraphics();
+        SimpleGraphics.INSTANCE.init();
 
     }
 }
