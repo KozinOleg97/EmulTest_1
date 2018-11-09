@@ -40,6 +40,7 @@ public class PPU {
 
     private Integer curLine = 0;
 
+
     PPU() {
         PPUMemory = new Byte[64 * 256]; //16 Kb 16384 Byte
         OAM = new Byte[256]; //256 Byte; 4 Byte for sprite; sprites 8x8 or 8x16
