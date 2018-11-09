@@ -79,11 +79,9 @@ public enum PPU {
 
 
         for (int i = 0; i < 4; i++) {
-            try {
-                OAM2[OAM2Index + i] = OAM[spriteNumb + i];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                System.out.println("dddddddddddddddddddddd");
-            }
+
+            OAM2[OAM2Index + i] = OAM[spriteNumb + i];
+
 
         }
 
@@ -96,6 +94,7 @@ public enum PPU {
 
 
     private void fillOAMM2(Byte line) { //заполняет oam2 c проверкой на перебор спрайтов в линии
+        OAM2Index = 0;
         Byte sizeOfSprite = 8;
         if (!flagSizeOfSprite) {
             sizeOfSprite = 16;
