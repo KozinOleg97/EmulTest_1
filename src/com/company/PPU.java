@@ -1,6 +1,9 @@
 package com.company;
 
 import java.awt.*;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Random;
 
 public enum PPU {
     INSTANCE;
@@ -27,8 +30,8 @@ public enum PPU {
     private Integer XSize = 256;    //256x240
     private Integer YSize = 240;
 
-    private Byte[] PPUMemory;
-    public Byte[] OAM;   //separate address space
+    private byte[] PPUMemory;
+    public byte[] OAM;   //separate address space
     public Byte[] OAM2;
 
     private Byte[] paletteSprite, paletteBackground;
@@ -47,10 +50,23 @@ public enum PPU {
 
 
     PPU() {
-        PPUMemory = new Byte[64 * 256]; //16 Kb 16384 Byte
+        PPUMemory = new byte[64 * 256]; //16 Kb 16384 Byte
+
+        try {
+            SecureRandom.getInstanceStrong().nextBytes((byte[]) PPUMemory);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
 
 
-        OAM = new Byte[256]; //256 Byte; 4 Byte for sprite; sprites 8x8 or 8x16
+        OAM = new byte[256]; //256 Byte; 4 Byte for sprite; sprites 8x8 or 8x16
+
+        try {
+            SecureRandom.getInstanceStrong().nextBytes((byte[]) OAM);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
         OAM2 = new Byte[4 * 8];
 
         paletteSprite = new Byte[16];
@@ -63,7 +79,12 @@ public enum PPU {
 
 
         for (int i = 0; i < 4; i++) {
-            OAM2[OAM2Index + i] = OAM[spriteNumb + i];
+            try {
+                OAM2[OAM2Index + i] = OAM[spriteNumb + i];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                System.out.println("dddddddddddddddddddddd");
+            }
+
         }
 
         OAM2Index++;// +4))))
@@ -96,8 +117,9 @@ public enum PPU {
 
     }
 
-    private void drawScreen() {
+    public void drawScreen() {
         for (int i = 0; i < YSize; i++) {
+            fillOAMM2((byte) i);
             drawLine(i);
         }
     }

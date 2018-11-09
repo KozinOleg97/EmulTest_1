@@ -72,6 +72,9 @@ public enum SimpleGraphics {
         public void paint(Graphics g) {
             super.paint(g);
 
+
+            PPU.INSTANCE.drawScreen();
+
             for (int i = 0; i < 256 * 240; i++) {
                 g.setColor(buffer[i]);
 
