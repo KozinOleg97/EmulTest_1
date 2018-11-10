@@ -34,6 +34,9 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
 
     Memory() {
         mainMemory = new Byte[8 * 256];
+        for (int i = 0; i < mainMemory.length; i++) {
+            mainMemory[i]=0;
+        }
     }
 
     Byte getMemAt(Short addr)
@@ -79,6 +82,13 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
+        }
+    }
+
+    void Push(Short a[])
+    {
+        for (int i = 0; i < a.length; i++) {
+            mainMemory[i]=a[i].byteValue();
         }
     }
 
