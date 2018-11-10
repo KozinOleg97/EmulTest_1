@@ -45,6 +45,8 @@ public enum PPU {
 
     private Integer curLine = 0;
 
+    private Integer curSpritePixelByX = 0;
+
 
     Palette palette0 = new Palette(Color.GRAY, Color.red, Color.BLUE, Color.ORANGE);
 
@@ -58,6 +60,10 @@ public enum PPU {
             e.printStackTrace();
         }
 
+        for (int i = 0; i < 64 * 256; i++) {
+            PPUMemory[i] = (byte) Math.abs((int) PPUMemory[i]);
+        }
+
 
         OAM = new byte[256]; //256 Byte; 4 Byte for sprite; sprites 8x8 or 8x16
 
@@ -65,6 +71,10 @@ public enum PPU {
             SecureRandom.getInstanceStrong().nextBytes((byte[]) OAM);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
+        }
+
+        for (int i = 0; i < 256; i++) {
+            OAM[i] = (byte) Math.abs((int) OAM[i]);
         }
 
         OAM2 = new Byte[4 * 8];
@@ -79,17 +89,8 @@ public enum PPU {
 
 
         for (int i = 0; i < 4; i++) {
-
-            OAM2[OAM2Index + i] = OAM[spriteNumb + i];
-
-
+            OAM2[OAM2Index++] = OAM[spriteNumb + i];
         }
-
-        OAM2Index++;// +4))))
-        OAM2Index++;
-        OAM2Index++;
-        OAM2Index++;
-
     }
 
 
@@ -135,11 +136,11 @@ public enum PPU {
 
         decrementXPosition();
         if (activSprite != -1) {
-            Integer px = getActiveSpriteNextPixel(curLine);
-            Integer collor = calcPixelColor(px);
+            Integer collorIndex = getActiveSpriteNextPixel(curLine);
+            //Integer collor = calcPixelColor(px);
 
 
-            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, collor, palette0);
+            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, collorIndex, palette0);
         }
 
     }
@@ -148,9 +149,32 @@ public enum PPU {
 
         Integer curSpriteLine = curScreenLine - OAM2[(activSprite * 4) + 3];
 
-        Integer bit1 = PPUMemory[OAM2[(activSprite * 4) + 1] * 16] >> 7 & 1;
-        Integer bit2 = PPUMemory[OAM2[(activSprite * 4) + 1] * 16 + 8] >> 7 & 1;
-        Integer resBit = bit1 | bit2 << 1;
+        Integer bit1 = null;
+
+        try {
+            bit1 = PPUMemory[OAM2[(activSprite * 4) + 1] * 16 + curSpriteLine] & 0xFF;
+        } catch (Exception e) {
+            System.out.println("aaaaaaa");
+        }
+
+        Integer bit2 = PPUMemory[OAM2[(activSprite * 4) + 1] * 16 + 8 + curScreenLine] & 0xFF;
+
+        bit1 = (bit1 >> (7 - curSpritePixelByX)) & 1;
+        bit2 = (bit2 >> (7 - curSpritePixelByX)) & 1;
+
+        if (bit2 != 0) {
+            bit2 = 2;
+        } else {
+            bit2 = 0;
+        }
+        if (bit1 != 0) {
+            bit1 = 1;
+        } else {
+            bit1 = 0;
+        }
+        Integer resBit = bit1 + bit2;
+
+        curSpritePixelByX++;
         return resBit;
 
     }
@@ -160,11 +184,13 @@ public enum PPU {
             //&0xFF  - для преобразования знакового Bite в беззнаковый Integer
 
 
+            // int q = (int) OAM2[i + 3] & 0xFF;
+
             if (((int) OAM2[i + 3] & 0xFF) == 0) {
                 activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
-
+                curSpritePixelByX = 0;
             } else {
-                OAM2[i]--;
+                OAM2[i + 3]--;
             }
 
 
@@ -172,11 +198,7 @@ public enum PPU {
     }
 
 
-    private Integer calcPixelColor(Integer curPx) {
 
-
-        return null;
-    }
 
 
 }
