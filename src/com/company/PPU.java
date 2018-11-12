@@ -105,10 +105,10 @@ public enum PPU {
         for (int i = 0; i < 256; i = i + 4) { //перебор ОАМ
             if (line >= OAM[i] && line < OAM[i] + sizeOfSprite) {
                 nubm++;
-                if (nubm < 9) {
+                if (nubm < 8) {
                     loadSpriteToOAM2(i);
 
-                } else if (nubm == 9) {
+                } else if (nubm == 8) {
                     ///TODO set overflow flag
                 }
 
@@ -127,6 +127,7 @@ public enum PPU {
 
     private void drawLine(Integer curLine) {
 
+        activSprite=-1;
         for (int i = 0; i < XSize; i++) {
             drawPixel(i, curLine);
         }
@@ -139,7 +140,7 @@ public enum PPU {
             Integer collorIndex = getActiveSpriteNextPixel(curLine);
             //Integer collor = calcPixelColor(px);
 
-
+            if(curSpritePixelByX>7) activSprite=-1;
             SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, collorIndex, palette0);
         }
 
@@ -147,7 +148,7 @@ public enum PPU {
 
     private Integer getActiveSpriteNextPixel(Integer curScreenLine) {//TODO сделать для спрайтов 8х16
 
-        Integer curSpriteLine = curScreenLine - OAM2[(activSprite * 4) + 3];
+        Integer curSpriteLine = curScreenLine - OAM2[(activSprite * 4) ];
 
         Integer bit1 = null;
 
@@ -162,6 +163,7 @@ public enum PPU {
         bit1 = (bit1 >> (7 - curSpritePixelByX)) & 1;
         bit2 = (bit2 >> (7 - curSpritePixelByX)) & 1;
 
+        // Integer resBit = bit1 + bit2*2;
         if (bit2 != 0) {
             bit2 = 2;
         } else {
@@ -186,7 +188,7 @@ public enum PPU {
 
             // int q = (int) OAM2[i + 3] & 0xFF;
 
-            if (((int) OAM2[i + 3] & 0xFF) == 0) {
+            if (( OAM2[i + 3] & 0xFF) == 0) {
                 activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
                 curSpritePixelByX = 0;
             } else {
