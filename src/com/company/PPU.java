@@ -61,7 +61,7 @@ public enum PPU {
         }
 
         for (int i = 0; i < 64 * 256; i++) {
-            PPUMemory[i] = (byte) Math.abs((int) PPUMemory[i]);
+            PPUMemory[i] = (byte)(PPUMemory[i]&0x7F);//(byte) Math.abs((int) PPUMemory[i]);
         }
 
 
@@ -74,7 +74,7 @@ public enum PPU {
         }
 
         for (int i = 0; i < 256; i++) {
-            OAM[i] = (byte) Math.abs((int) OAM[i]);
+            OAM[i] = (byte)(OAM[i]&0x7F);//(byte) Math.abs((int) OAM[i]);
         }
 
         OAM2 = new Byte[4 * 8];
@@ -188,11 +188,11 @@ public enum PPU {
 
             // int q = (int) OAM2[i + 3] & 0xFF;
 
-            if (( OAM2[i + 3] & 0xFF) == 0) {
+            if (( --OAM2[i + 3] & 0xFF) == 0) {
                 activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
                 curSpritePixelByX = 0;
             } else {
-                OAM2[i + 3]--;
+                //OAM2[i + 3]--;
             }
 
 
