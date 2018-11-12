@@ -78,11 +78,12 @@ public enum SimpleGraphics {
             for (int i = 0; i < 256 * 240; i++) {
                 g.setColor(buffer[i]);
 
-                int scale = 2;
+                int scale = 5;
                 int x = i % 256;
                 int y = i / 256;
                 x*=scale; y*=scale;
-                g.drawLine(x, y, x+scale-1, y+scale-1);
+                g.fillRect(x, y, scale, scale);
+                //g.drawLine(x, y, x+scale-1, y+scale-1);
                 g.setColor(Color.BLACK);
             }
 
