@@ -33,15 +33,13 @@ public enum PPU {
     private byte[] PPUMemory;
     public byte[] OAM;   //separate address space
     public Byte[] OAM2;
+    public Byte[] OAM2XCounters;
 
     private boolean flagSizeOfSprite = true;
 
     private Integer OAM2Index = 0;
 
     private Integer activSprite = -1;
-
-    private Integer curSpritePixelByX = 0;
-
     Palette palette0 = new Palette(Color.GRAY, Color.red, Color.BLUE, Color.ORANGE);
 
 
@@ -72,6 +70,7 @@ public enum PPU {
         }
 
         OAM2 = new Byte[4 * 8];
+        OAM2XCounters = new Byte[8];
 
 
     }
@@ -91,9 +90,13 @@ public enum PPU {
     private void loadSpriteToOAM2(int spriteNumb) { // 1 спрайт из OAM в OAM2
 
 
+        OAM2XCounters[OAM2Index / 4] = OAM[spriteNumb + 3];
+
         for (int i = 0; i < 4; i++) {
-            OAM2[OAM2Index++] = OAM[spriteNumb + i];
+            OAM2[OAM2Index++] = OAM[spriteNumb + i];////////////////////////////////// c ++
         }
+
+
     }
 
 
@@ -115,7 +118,7 @@ public enum PPU {
                 } else if (nubm == 8) {
                     ///TODO set overflow flag
 
-                    PPUMemRnd();
+                    //PPUMemRnd();
                 }
 
             }
@@ -133,56 +136,57 @@ public enum PPU {
 
     private void drawLine(Integer curLine) {
 
-        activSprite = -1;
+
         for (int i = 0; i < XSize; i++) {
             drawPixel(i, curLine);
         }
     }
 
     private void drawPixel(Integer curPixel, Integer curLine) {
-
-        decrementXPosition();
+        checkXPosition();
         if (activSprite != -1) {
-            Integer collorIndex = getActiveSpriteNextPixel(curLine);
-            //Integer collor = calcPixelColor(px);
+            Integer collorIndex = getActiveSpriteNextPixel(curPixel, curLine);
 
-            if (curSpritePixelByX > 7) activSprite = -1;
             SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, collorIndex, palette0);
         }
-
+        decrementXPosition();
     }
 
-    private Integer getActiveSpriteNextPixel(Integer curScreenLine) {//TODO сделать для спрайтов 8х16
+    private Integer getActiveSpriteNextPixel(Integer curPixelOnScreen, Integer curScreenLine) {//TODO сделать для спрайтов 8х16
 
-        Integer curSpriteLine = curScreenLine - OAM2[(activSprite * 4)];
+        Integer curSpriteLine = null;
 
-        Integer bit1 = null;
+        curSpriteLine = curScreenLine - OAM2[(activSprite * 4)];
 
-        try {
-            bit1 = PPUMemory[OAM2[(activSprite * 4) + 1] * 16 + curSpriteLine] & 0xFF;
-        } catch (Exception e) {
-            System.out.println("aaaaaaa");
+
+        Integer spriteX = (curPixelOnScreen - OAM2[(activSprite * 4) + 3] & 0xFF);
+
+        Integer adr1 = OAM2[(activSprite * 4) + 1] & 0xFF;
+        Integer adr2 = OAM2[(activSprite * 4) + 1] & 0xFF;
+
+        Integer adr1High = adr1 & ~0x01;
+        Integer adr2High = adr2 & ~0x01;
+
+        Integer adr1Low = adr1 & ~0xfe;
+        Integer adr2Low = adr2 & ~0xfe;
+
+        adr1 = adr1 * 16 + (curSpriteLine);
+        adr2 = adr2 * 16 + (curSpriteLine + 8);
+
+
+        Integer bit1 = PPUMemory[adr1] & 0xFF;   //TODO тут неверно(не до конца) расчитывается адрес для обращения в PPUMEM не расчитываются банки
+
+        Integer bit2 = PPUMemory[adr2] & 0xFF;
+
+        bit1 = (bit1 >> (7 - spriteX)) & 1;
+        bit2 = (bit2 >> (7 - spriteX)) & 1;
+
+        Integer resBit = bit1 + bit2 * 2;
+
+        if (spriteX == 7) {
+            activSprite = -1;
         }
 
-        Integer bit2 = PPUMemory[OAM2[(activSprite * 4) + 1] * 16 + 8 + curScreenLine] & 0xFF;
-
-        bit1 = (bit1 >> (7 - curSpritePixelByX)) & 1;
-        bit2 = (bit2 >> (7 - curSpritePixelByX)) & 1;
-
-        // Integer resBit = bit1 + bit2*2;
-        if (bit2 != 0) {
-            bit2 = 2;
-        } else {
-            bit2 = 0;
-        }
-        if (bit1 != 0) {
-            bit1 = 1;
-        } else {
-            bit1 = 0;
-        }
-        Integer resBit = bit1 + bit2;
-
-        curSpritePixelByX++;
         return resBit;
 
     }
@@ -191,19 +195,28 @@ public enum PPU {
         for (int i = 0; i < OAM2Index; i = i + 4) {
             //&0xFF  - для преобразования знакового Bite в беззнаковый Integer
 
+            OAM2XCounters[i / 4]--;
 
             // int q = (int) OAM2[i + 3] & 0xFF;
 
-            if ((--OAM2[i + 3] & 0xFF) == 0) {
+           /* if ((--OAM2XCounters[i / 4] & 0xFF) == 0) {
                 activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
-                curSpritePixelByX = 0;
+
             } else {
                 //OAM2[i + 3]--;
             }
-
+*/
 
         }
     }
 
+    private void checkXPosition() {
+        for (int i = 0; i < OAM2Index; i = i + 4) {
 
+            if ((OAM2XCounters[i / 4] & 0xFF) == 0) {
+                activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
+            }
+        }
+
+    }
 }

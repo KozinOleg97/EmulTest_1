@@ -82,7 +82,7 @@ public enum SimpleGraphics {
             for (int i = 0; i < 256 * 240; i++) {
                 g.setColor(buffer[i]);
 
-                int scale = 3;
+                int scale = 4;
                 int x = i % 256;
                 int y = i / 256;
                 x*=scale; y*=scale;
