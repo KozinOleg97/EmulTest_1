@@ -36,6 +36,7 @@ public enum PPU {
     public Byte[] OAM2XCounters;
 
     private boolean flagSizeOfSprite = true;
+    private boolean flagTableOfSprites = true;
 
     private Integer OAM2Index = 0;
 
@@ -161,22 +162,22 @@ public enum PPU {
 
         Integer spriteX = (curPixelOnScreen - OAM2[(activSprite * 4) + 3] & 0xFF);
 
-        Integer adr1 = OAM2[(activSprite * 4) + 1] & 0xFF;
-        Integer adr2 = OAM2[(activSprite * 4) + 1] & 0xFF;
-
-        Integer adr1High = adr1 & ~0x01;
-        Integer adr2High = adr2 & ~0x01;
-
-        Integer adr1Low = adr1 & ~0xfe;
-        Integer adr2Low = adr2 & ~0xfe;
-
-        adr1 = adr1 * 16 + (curSpriteLine);
-        adr2 = adr2 * 16 + (curSpriteLine + 8);
+        Integer addr = OAM2[(activSprite * 4) + 1] & 0xFF;
 
 
-        Integer bit1 = PPUMemory[adr1] & 0xFF;   //TODO тут неверно(не до конца) расчитывается адрес для обращения в PPUMEM не расчитываются банки
+        if (flagSizeOfSprite) {   // if 8x8
+            addr += flagTableOfSprites == false ? 0 : 4096;
+        } else {//if 8x16
+            Integer addr1High = addr & ~0x01;
+            Integer addr1Low = addr & ~0xfe;
 
-        Integer bit2 = PPUMemory[adr2] & 0xFF;
+            addr = addr1Low * 4096 + addr1High;
+        }
+
+
+        Integer bit1 = PPUMemory[addr] * 16 + (curSpriteLine) & 0xFF;   //TODO тут неверно(не до конца) расчитывается адрес для обращения в PPUMEM не расчитываются банки
+
+        Integer bit2 = PPUMemory[addr] * 16 + (curSpriteLine + 8) & 0xFF;
 
         bit1 = (bit1 >> (7 - spriteX)) & 1;
         bit2 = (bit2 >> (7 - spriteX)) & 1;
