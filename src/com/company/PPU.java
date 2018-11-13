@@ -94,7 +94,7 @@ public enum PPU {
         OAM2XCounters[OAM2Index / 4] = OAM[spriteNumb + 3];
 
         for (int i = 0; i < 4; i++) {
-            OAM2[OAM2Index++] = OAM[spriteNumb + i];////////////////////////////////// c ++
+            OAM2[OAM2Index++] = OAM[spriteNumb + i];
         }
 
 
@@ -119,7 +119,7 @@ public enum PPU {
                 } else if (nubm == 8) {
                     ///TODO set overflow flag
 
-                    //PPUMemRnd();
+                    PPUMemRnd();
                 }
 
             }
@@ -156,35 +156,41 @@ public enum PPU {
     private Integer getActiveSpriteNextPixel(Integer curPixelOnScreen, Integer curScreenLine) {//TODO сделать для спрайтов 8х16
 
         Integer curSpriteLine = null;
+        Integer spriteSize = 16;
 
         curSpriteLine = curScreenLine - OAM2[(activSprite * 4)];
-
+        System.out.println(curSpriteLine);
 
         Integer spriteX = (curPixelOnScreen - OAM2[(activSprite * 4) + 3] & 0xFF);
 
-        Integer addr = OAM2[(activSprite * 4) + 1] & 0xFF;
+
+        Integer addr = (OAM2[(activSprite * 4) + 1] * spriteSize) & 0xFF;
 
 
         if (flagSizeOfSprite) {   // if 8x8
             addr += flagTableOfSprites == false ? 0 : 4096;
         } else {//if 8x16
+            spriteSize = 8 * 16;
+
             Integer addr1High = addr & ~0x01;
             Integer addr1Low = addr & ~0xfe;
+
+            if (curSpriteLine >= 8) addr1High |= 1;
 
             addr = addr1Low * 4096 + addr1High;
         }
 
 
-        Integer bit1 = PPUMemory[addr] * 16 + (curSpriteLine) & 0xFF;   //TODO тут неверно(не до конца) расчитывается адрес для обращения в PPUMEM не расчитываются банки
+        Integer bit1 = PPUMemory[addr + (curSpriteLine)] & 0xFF;
 
-        Integer bit2 = PPUMemory[addr] * 16 + (curSpriteLine + 8) & 0xFF;
+        Integer bit2 = PPUMemory[addr + (curSpriteLine + 8)] & 0xFF;
 
         bit1 = (bit1 >> (7 - spriteX)) & 1;
         bit2 = (bit2 >> (7 - spriteX)) & 1;
 
         Integer resBit = bit1 + bit2 * 2;
 
-        if (spriteX == 7) {
+        if (spriteX == 7 - 1) {
             activSprite = -1;
         }
 
