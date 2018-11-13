@@ -34,19 +34,13 @@ public enum PPU {
     public byte[] OAM;   //separate address space
     public Byte[] OAM2;
 
-    private Byte[] paletteSprite, paletteBackground;
-
-
     private boolean flagSizeOfSprite = true;
 
     private Integer OAM2Index = 0;
 
     private Integer activSprite = -1;
 
-    private Integer curLine = 0;
-
     private Integer curSpritePixelByX = 0;
-
 
     Palette palette0 = new Palette(Color.GRAY, Color.red, Color.BLUE, Color.ORANGE);
 
@@ -61,7 +55,7 @@ public enum PPU {
         }
 
         for (int i = 0; i < 64 * 256; i++) {
-            PPUMemory[i] = (byte)(PPUMemory[i]&0x7F);//(byte) Math.abs((int) PPUMemory[i]);
+            PPUMemory[i] = (byte) (PPUMemory[i] & 0x7F);//(byte) Math.abs((int) PPUMemory[i]);
         }
 
 
@@ -74,16 +68,25 @@ public enum PPU {
         }
 
         for (int i = 0; i < 256; i++) {
-            OAM[i] = (byte)(OAM[i]&0x7F);//(byte) Math.abs((int) OAM[i]);
+            OAM[i] = (byte) (OAM[i] & 0x7F);//(byte) Math.abs((int) OAM[i]);
         }
 
         OAM2 = new Byte[4 * 8];
 
-        paletteSprite = new Byte[16];
-        paletteBackground = new Byte[16];
 
     }
 
+    private void PPUMemRnd() {
+        try {
+            SecureRandom.getInstanceStrong().nextBytes((byte[]) PPUMemory);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
+        for (int j = 0; j < 64 * 256; j++) {
+            PPUMemory[j] = (byte) (PPUMemory[j] & 0x7F);//(byte) Math.abs((int) PPUMemory[i]);
+        }
+    }
 
     private void loadSpriteToOAM2(int spriteNumb) { // 1 спрайт из OAM в OAM2
 
@@ -94,22 +97,25 @@ public enum PPU {
     }
 
 
-    private void fillOAMM2(Byte line) { //заполняет oam2 c проверкой на перебор спрайтов в линии
+    private void fillOAMM2(Integer line) { //заполняет oam2 c проверкой на перебор спрайтов в линии
         OAM2Index = 0;
         Byte sizeOfSprite = 8;
         if (!flagSizeOfSprite) {
             sizeOfSprite = 16;
         }
 
+
         Integer nubm = 0;
         for (int i = 0; i < 256; i = i + 4) { //перебор ОАМ
-            if (line >= OAM[i] && line < OAM[i] + sizeOfSprite) {
+            if ((line >= OAM[i]) && (line < OAM[i] + sizeOfSprite)) {
                 nubm++;
                 if (nubm < 8) {
                     loadSpriteToOAM2(i);
 
                 } else if (nubm == 8) {
                     ///TODO set overflow flag
+
+                    PPUMemRnd();
                 }
 
             }
@@ -120,14 +126,14 @@ public enum PPU {
 
     public void drawScreen() {
         for (int i = 0; i < YSize; i++) {
-            fillOAMM2((byte) i);
+            fillOAMM2(i);
             drawLine(i);
         }
     }
 
     private void drawLine(Integer curLine) {
 
-        activSprite=-1;
+        activSprite = -1;
         for (int i = 0; i < XSize; i++) {
             drawPixel(i, curLine);
         }
@@ -140,7 +146,7 @@ public enum PPU {
             Integer collorIndex = getActiveSpriteNextPixel(curLine);
             //Integer collor = calcPixelColor(px);
 
-            if(curSpritePixelByX>7) activSprite=-1;
+            if (curSpritePixelByX > 7) activSprite = -1;
             SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, collorIndex, palette0);
         }
 
@@ -148,7 +154,7 @@ public enum PPU {
 
     private Integer getActiveSpriteNextPixel(Integer curScreenLine) {//TODO сделать для спрайтов 8х16
 
-        Integer curSpriteLine = curScreenLine - OAM2[(activSprite * 4) ];
+        Integer curSpriteLine = curScreenLine - OAM2[(activSprite * 4)];
 
         Integer bit1 = null;
 
@@ -188,7 +194,7 @@ public enum PPU {
 
             // int q = (int) OAM2[i + 3] & 0xFF;
 
-            if (( --OAM2[i + 3] & 0xFF) == 0) {
+            if ((--OAM2[i + 3] & 0xFF) == 0) {
                 activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
                 curSpritePixelByX = 0;
             } else {
@@ -198,9 +204,6 @@ public enum PPU {
 
         }
     }
-
-
-
 
 
 }

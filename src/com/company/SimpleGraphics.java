@@ -16,8 +16,12 @@ public enum SimpleGraphics {
 
     public Color[] buffer = new Color[256 * 240];
 
+
     SimpleGraphics() {
 
+        for (int j = 0; j < 256 * 240; j++) {
+            buffer[j] = Color.BLACK;
+        }
 
 
         frame = new JFrame("Emul");
@@ -78,13 +82,13 @@ public enum SimpleGraphics {
             for (int i = 0; i < 256 * 240; i++) {
                 g.setColor(buffer[i]);
 
-                int scale = 5;
+                int scale = 3;
                 int x = i % 256;
                 int y = i / 256;
                 x*=scale; y*=scale;
                 g.fillRect(x, y, scale, scale);
                 //g.drawLine(x, y, x+scale-1, y+scale-1);
-                g.setColor(Color.BLACK);
+                //g.setColor(Color.BLACK);
             }
 
             //g.drawRect(x, y, w, h);
@@ -96,17 +100,7 @@ public enum SimpleGraphics {
         @Override
         public void actionPerformed(ActionEvent e) {
 
-            if (x + w > width | x < 0) {
-                xi = -xi;
-            }
 
-            if (y + h > height | y < 0) {
-                yi = -yi;
-            }
-
-
-            x += xi;
-            y += yi;
 
             repaint();
 
