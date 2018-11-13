@@ -118,8 +118,8 @@ public enum PPU {
 
                 } else if (nubm == 8) {
                     ///TODO set overflow flag
-
                     PPUMemRnd();
+
                 }
 
             }
@@ -156,28 +156,26 @@ public enum PPU {
     private Integer getActiveSpriteNextPixel(Integer curPixelOnScreen, Integer curScreenLine) {//TODO сделать для спрайтов 8х16
 
         Integer curSpriteLine = null;
-        Integer spriteSize = 16;
+
 
         curSpriteLine = curScreenLine - OAM2[(activSprite * 4)];
-        System.out.println(curSpriteLine);
 
         Integer spriteX = (curPixelOnScreen - OAM2[(activSprite * 4) + 3] & 0xFF);
 
-
-        Integer addr = (OAM2[(activSprite * 4) + 1] * spriteSize) & 0xFF;
+        Integer addr = (OAM2[(activSprite * 4) + 1]) & 0xFF;
 
 
         if (flagSizeOfSprite) {   // if 8x8
+            addr *= 16;
             addr += flagTableOfSprites == false ? 0 : 4096;
         } else {//if 8x16
-            spriteSize = 8 * 16;
 
-            Integer addr1High = addr & ~0x01;
-            Integer addr1Low = addr & ~0xfe;
+            Integer addrHigh = addr & ~0x01;
+            Integer addrLow = addr & ~0xfe;
+            if (curSpriteLine >= 8) addrHigh |= 1;
+            addrHigh *= 16;
 
-            if (curSpriteLine >= 8) addr1High |= 1;
-
-            addr = addr1Low * 4096 + addr1High;
+            addr = addrLow * 4096 + addrHigh;
         }
 
 
@@ -203,17 +201,6 @@ public enum PPU {
             //&0xFF  - для преобразования знакового Bite в беззнаковый Integer
 
             OAM2XCounters[i / 4]--;
-
-            // int q = (int) OAM2[i + 3] & 0xFF;
-
-           /* if ((--OAM2XCounters[i / 4] & 0xFF) == 0) {
-                activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
-
-            } else {
-                //OAM2[i + 3]--;
-            }
-*/
-
         }
     }
 
