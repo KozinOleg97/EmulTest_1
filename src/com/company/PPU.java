@@ -92,7 +92,7 @@ public enum PPU {
         OAM2XCounters[OAM2Index / 4] = OAM[spriteNumb + 3];
 
         for (int i = 0; i < 4; i++) {
-            OAM2[OAM2Index++] = OAM[spriteNumb + i];////////////////////////////////// c ++
+            OAM2[OAM2Index++] = OAM[spriteNumb + i];
         }
 
 
@@ -157,7 +157,6 @@ public enum PPU {
 
         curSpriteLine = curScreenLine - (OAM2[(activSprite * 4)]&0xFF);
 
-
         Integer spriteX = (curPixelOnScreen - OAM2[(activSprite * 4) + 3] & 0xFF);
 
         Integer addr = OAM2[(activSprite * 4) + 1] & 0xFF;
@@ -175,7 +174,7 @@ public enum PPU {
         }
 
 
-        Integer bit1 = PPUMemory[addr] & 0xFF;   //TODO тут неверно(не до конца) расчитывается адрес для обращения в PPUMEM не расчитываются банки
+        Integer bit1 = PPUMemory[addr] & 0xFF;
 
         Integer bit2 = PPUMemory[addr + 8] & 0xFF;
 
@@ -197,17 +196,6 @@ public enum PPU {
             //&0xFF  - для преобразования знакового Bite в беззнаковый Integer
 
             OAM2XCounters[i / 4]--;
-
-            // int q = (int) OAM2[i + 3] & 0xFF;
-
-           /* if ((--OAM2XCounters[i / 4] & 0xFF) == 0) {
-                activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
-
-            } else {
-                //OAM2[i + 3]--;
-            }
-*/
-
         }
     }
 
