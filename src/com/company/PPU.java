@@ -53,11 +53,6 @@ public enum PPU {
             e.printStackTrace();
         }
 
-        for (int i = 0; i < 64 * 256; i++) {
-            PPUMemory[i] = (byte) (PPUMemory[i] & 0x7F);//(byte) Math.abs((int) PPUMemory[i]);
-        }
-
-
         OAM = new byte[256]; //256 Byte; 4 Byte for sprite; sprites 8x8 or 8x16
 
         try {
@@ -66,9 +61,6 @@ public enum PPU {
             e.printStackTrace();
         }
 
-        for (int i = 0; i < 256; i++) {
-            OAM[i] = (byte) (OAM[i] & 0x7F);//(byte) Math.abs((int) OAM[i]);
-        }
 
         OAM2 = new Byte[4 * 8];
         OAM2XCounters = new Byte[8];
@@ -83,9 +75,15 @@ public enum PPU {
             e.printStackTrace();
         }
 
-        for (int j = 0; j < 64 * 256; j++) {
-            PPUMemory[j] = (byte) (PPUMemory[j] & 0x7F);//(byte) Math.abs((int) PPUMemory[i]);
+
+
+        try {
+            SecureRandom.getInstanceStrong().nextBytes((byte[]) OAM);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
         }
+
+
     }
 
     private void loadSpriteToOAM2(int spriteNumb) { // 1 спрайт из OAM в OAM2
@@ -108,10 +106,9 @@ public enum PPU {
             sizeOfSprite = 16;
         }
 
-
         Integer nubm = 0;
         for (int i = 0; i < 256; i = i + 4) { //перебор ОАМ
-            if ((line >= OAM[i]) && (line < OAM[i] + sizeOfSprite)) {
+            if ((line >= (OAM[i]&0xFF)) && (line < (OAM[i]&0xFF) + sizeOfSprite)) {
                 nubm++;
                 if (nubm < 8) {
                     loadSpriteToOAM2(i);
@@ -119,7 +116,7 @@ public enum PPU {
                 } else if (nubm == 8) {
                     ///TODO set overflow flag
 
-                    //PPUMemRnd();
+
                 }
 
             }
@@ -129,6 +126,7 @@ public enum PPU {
     }
 
     public void drawScreen() {
+        PPUMemRnd();
         for (int i = 0; i < YSize; i++) {
             fillOAMM2(i);
             drawLine(i);
@@ -157,34 +155,36 @@ public enum PPU {
 
         Integer curSpriteLine = null;
 
-        curSpriteLine = curScreenLine - OAM2[(activSprite * 4)];
+        curSpriteLine = curScreenLine - (OAM2[(activSprite * 4)]&0xFF);
 
 
         Integer spriteX = (curPixelOnScreen - OAM2[(activSprite * 4) + 3] & 0xFF);
 
         Integer addr = OAM2[(activSprite * 4) + 1] & 0xFF;
 
-
         if (flagSizeOfSprite) {   // if 8x8
+            addr*=16; addr+=curSpriteLine;
             addr += flagTableOfSprites == false ? 0 : 4096;
         } else {//if 8x16
             Integer addr1High = addr & ~0x01;
             Integer addr1Low = addr & ~0xfe;
+            if(curSpriteLine>=8) addr1High |= 1;
+            addr1High*=16; addr1High+=curSpriteLine;
 
             addr = addr1Low * 4096 + addr1High;
         }
 
 
-        Integer bit1 = PPUMemory[addr] * 16 + (curSpriteLine) & 0xFF;   //TODO тут неверно(не до конца) расчитывается адрес для обращения в PPUMEM не расчитываются банки
+        Integer bit1 = PPUMemory[addr] & 0xFF;   //TODO тут неверно(не до конца) расчитывается адрес для обращения в PPUMEM не расчитываются банки
 
-        Integer bit2 = PPUMemory[addr] * 16 + (curSpriteLine + 8) & 0xFF;
+        Integer bit2 = PPUMemory[addr + 8] & 0xFF;
 
         bit1 = (bit1 >> (7 - spriteX)) & 1;
         bit2 = (bit2 >> (7 - spriteX)) & 1;
 
         Integer resBit = bit1 + bit2 * 2;
 
-        if (spriteX == 7) {
+        if (spriteX == 7 || curPixelOnScreen>=XSize-1) {
             activSprite = -1;
         }
 

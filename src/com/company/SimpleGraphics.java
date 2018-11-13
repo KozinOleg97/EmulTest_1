@@ -67,7 +67,7 @@ public enum SimpleGraphics {
             setDoubleBuffered(true);
 
             setBackground(Color.black);
-            setPreferredSize(new Dimension(640, 480));
+            setPreferredSize(new Dimension(640, 490));
 
 
             timer.start();
@@ -82,7 +82,7 @@ public enum SimpleGraphics {
             for (int i = 0; i < 256 * 240; i++) {
                 g.setColor(buffer[i]);
 
-                int scale = 4;
+                int scale = 2;
                 int x = i % 256;
                 int y = i / 256;
                 x*=scale; y*=scale;
@@ -103,6 +103,10 @@ public enum SimpleGraphics {
 
 
             repaint();
+
+            for (int j = 0; j < 256 * 240; j++) {
+                buffer[j] = Color.BLACK;
+            }
 
 
         }
