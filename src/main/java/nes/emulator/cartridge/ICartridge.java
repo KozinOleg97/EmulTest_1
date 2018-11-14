@@ -1,4 +1,4 @@
-package com.company.cartridges;
+package nes.emulator.cartridge;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

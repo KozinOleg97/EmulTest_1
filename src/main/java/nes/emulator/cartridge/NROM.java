@@ -1,4 +1,4 @@
-package com.company.cartridges;
+package nes.emulator.cartridge;
 
 public class NROM implements ICartridge {
     NROM(int a, int b)
