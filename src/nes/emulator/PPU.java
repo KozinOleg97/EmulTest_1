@@ -1,4 +1,4 @@
-package com.company;
+package nes.emulator;
 
 import java.awt.*;
 import java.security.NoSuchAlgorithmException;

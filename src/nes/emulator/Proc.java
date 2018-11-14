@@ -1,4 +1,4 @@
-package com.company;
+package nes.emulator;
 
 
 //http://www.emuverse.ru/wiki/MOS_Technology_6502/Система_команд

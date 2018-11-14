@@ -1,4 +1,5 @@
-package com.company;
+package nes.emulator;
+
 
 
 public class Main {

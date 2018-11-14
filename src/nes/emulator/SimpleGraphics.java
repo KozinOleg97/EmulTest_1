@@ -1,4 +1,4 @@
-package com.company;
+package nes.emulator;
 
 import javax.swing.*;
 import java.awt.*;
