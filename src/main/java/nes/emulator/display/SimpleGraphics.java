@@ -15,6 +15,9 @@ public enum SimpleGraphics {
     JFrame frame;
     JPanel panel;
     public Palette palette0;
+    Integer scale = 2;
+    int width = 256 * scale;
+    int height = 240 * scale;
 
 
     public Color[] buffer = new Color[256 * 240];
@@ -30,7 +33,7 @@ public enum SimpleGraphics {
         frame = new JFrame("Emul");
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(640, 480);
+        frame.setSize(width, height);
         frame.setTitle("Emul");
         frame.setResizable(false);
         //setUndecorated(true);
@@ -61,8 +64,7 @@ public enum SimpleGraphics {
         int xi = 10, yi = 10;
 
 
-        int width = 640;
-        int height = 480;
+
 
         public GPanel() {
             super();
@@ -70,7 +72,7 @@ public enum SimpleGraphics {
             setDoubleBuffered(true);
 
             setBackground(Color.black);
-            setPreferredSize(new Dimension(640, 490));
+            setPreferredSize(new Dimension(width, height));
 
 
             timer.start();
@@ -85,7 +87,7 @@ public enum SimpleGraphics {
             for (int i = 0; i < 256 * 240; i++) {
                 g.setColor(buffer[i]);
 
-                int scale = 2;
+
                 int x = i % 256;
                 int y = i / 256;
                 x*=scale; y*=scale;
