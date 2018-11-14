@@ -1,4 +1,4 @@
-package com.company;
+package nes.emulator.console;
 
 
 //http://www.emuverse.ru/wiki/MOS_Technology_6502/Система_команд
@@ -43,7 +43,7 @@ public class Proc {
 
     private Memory m;
 
-    Proc(Memory mem)
+    public Proc(Memory mem)
     {
         regA = regX = regY = 0;
         regS = (byte)0xFF;
@@ -150,7 +150,7 @@ public class Proc {
         setN(cmpb);
     }
 
-    void Step()
+    public void Step()
     {
         // LDA FF, TAX, INX, STA 1,X, LDY #0
         //char* opcodes = "\xA9\xFE\xAA\xE8\x95\x01\xA4\x00";

@@ -1,4 +1,7 @@
-package com.company;
+package nes.emulator;
+
+import nes.emulator.console.Memory;
+import nes.emulator.console.Proc;
 
 public class Main {
 

@@ -1,4 +1,4 @@
-package com.company;
+package nes.emulator.console;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,7 +32,7 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
     private Byte[] mainMemory;
     private Logger log;
 
-    Memory() {
+    public Memory() {
         mainMemory = new Byte[8 * 256];
         for (int i = 0; i < mainMemory.length; i++) {
             mainMemory[i]=0;
@@ -85,7 +85,7 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
         }
     }
 
-    void Push(Short a[])
+    public void Push(Short a[])
     {
         for (int i = 0; i < a.length; i++) {
             mainMemory[i]=a[i].byteValue();
