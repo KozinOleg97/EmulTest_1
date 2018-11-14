@@ -1,6 +1,6 @@
 package nes.emulator.cartridge;
 
-public class NROM implements ICartridge {
+public class NROM implements GenericCartridge {
     NROM(int a, int b)
     {
 
