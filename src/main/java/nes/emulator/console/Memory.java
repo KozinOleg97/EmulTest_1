@@ -1,4 +1,4 @@
-package nes.emulator;
+package nes.emulator.console;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

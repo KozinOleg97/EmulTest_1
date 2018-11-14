@@ -1,6 +1,7 @@
 package nes.emulator;
 
 
+import nes.emulator.display.SimpleGraphics;
 
 public class Main {
 

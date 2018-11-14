@@ -1,4 +1,7 @@
-package nes.emulator;
+package nes.emulator.display;
+
+import nes.emulator.console.PPU;
+import nes.emulator.console.Palette;
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,7 +45,7 @@ public enum SimpleGraphics {
     }
 
 
-    void addPixel(Integer curPixel, Integer curLine, Integer color, Palette curPalette) {
+    public void addPixel(Integer curPixel, Integer curLine, Integer color, Palette curPalette) {
         buffer[(256 * curLine) + curPixel] = curPalette.getColor(color);
 
     }
@@ -114,7 +117,7 @@ public enum SimpleGraphics {
 
     }
 
-    void init() {
+    public void init() {
 
     }
 

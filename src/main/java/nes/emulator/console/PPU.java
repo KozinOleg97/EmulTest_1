@@ -1,4 +1,6 @@
-package nes.emulator;
+package nes.emulator.console;
+
+import nes.emulator.display.SimpleGraphics;
 
 import java.awt.*;
 import java.security.NoSuchAlgorithmException;
