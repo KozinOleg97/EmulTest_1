@@ -49,6 +49,8 @@ public enum PPU {
     PPU() {
         PPUMemory = new byte[64 * 256]; //16 Kb 16384 Byte
 
+
+
         try {
             SecureRandom.getInstanceStrong().nextBytes((byte[]) PPUMemory);
         } catch (NoSuchAlgorithmException e) {
@@ -153,7 +155,7 @@ public enum PPU {
         decrementXPosition();
     }
 
-    private Integer getActiveSpriteNextPixel(Integer curPixelOnScreen, Integer curScreenLine) {//TODO сделать для спрайтов 8х16
+    private Integer getActiveSpriteNextPixel(Integer curPixelOnScreen, Integer curScreenLine) {
 
         Integer curSpriteLine = null;
 
@@ -177,7 +179,6 @@ public enum PPU {
 
 
         Integer bit1 = PPUMemory[addr] & 0xFF;
-
         Integer bit2 = PPUMemory[addr + 8] & 0xFF;
 
         bit1 = (bit1 >> (7 - spriteX)) & 1;

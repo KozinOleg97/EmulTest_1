@@ -15,7 +15,7 @@ public enum SimpleGraphics {
     JFrame frame;
     JPanel panel;
     public Palette palette0;
-    Integer scale = 2;
+    Integer scale = 3;
     int width = 256 * scale;
     int height = 240 * scale;
 
