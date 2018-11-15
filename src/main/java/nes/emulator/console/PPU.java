@@ -56,6 +56,7 @@ public enum PPU {
 
     private Integer activSprite = -1;
     Palette palette0 = new Palette(Color.GRAY, Color.red, Color.BLUE, Color.ORANGE);
+    Palette palette1 = new Palette(Color.BLACK, Color.WHITE, Color.DARK_GRAY, Color.GRAY);
 
 
     PPU() {
@@ -151,11 +152,26 @@ public enum PPU {
     private void drawPixel(Integer curPixel, Integer curLine) {
         checkXPosition();
         if (activSprite != -1) {
-            Integer collorIndex = getActiveSpriteNextPixel(curPixel, curLine);
+            Integer spriteColor = getActiveSpriteNextPixel(curPixel, curLine);
 
-            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, collorIndex, palette0);
+            if (spriteColor == 0){                            // if transparent --> draw background pixel --> return
+                Integer bgColor = getBackgroundPixel(curPixel, curLine);
+                SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, bgColor, palette1);
+
+                decrementXPosition();
+                return;
+            }
+
+            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, spriteColor, palette0);
+        } else {                                            // if no sprite --> draw background pixel
+            Integer bgColor = getBackgroundPixel(curPixel, curLine);
+            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, bgColor, palette1);
         }
         decrementXPosition();
+    }
+
+    private Integer getBackgroundPixel(Integer curPixelOnScreen, Integer curScreenLine) {//TODO
+        return 0;
     }
 
     private Integer getActiveSpriteNextPixel(Integer curPixelOnScreen, Integer curScreenLine) {

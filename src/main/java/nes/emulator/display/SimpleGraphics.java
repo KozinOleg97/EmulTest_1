@@ -99,9 +99,9 @@ public enum SimpleGraphics {
 
             repaint();
 
-            for (int j = 0; j < 256 * 240; j++) {
+           /* for (int j = 0; j < 256 * 240; j++) {
                 visibleBuffer[j] = Color.BLACK;
-            }
+            }*/
 
 
         }
