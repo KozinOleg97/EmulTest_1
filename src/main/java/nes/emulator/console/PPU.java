@@ -170,7 +170,9 @@ public enum PPU {
         decrementXPosition();
     }
 
-    private Integer getBackgroundPixel(Integer curPixelOnScreen, Integer curScreenLine) {//TODO
+    private Integer getBackgroundPixel(Integer curPixelOnScreen, Integer curScreenLine) {//TODO add func to calculate current BG pixel address (+need some scrolling attribute)
+        //8192 - NameTable1 index
+        //1024 - NameTable size
         return 0;
     }
 
