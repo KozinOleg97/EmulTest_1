@@ -20,13 +20,13 @@ public enum SimpleGraphics {
     int height = 240 * scale;
 
 
-    public Color[] buffer = new Color[256 * 240];
+    public Color[] visibleBuffer = new Color[256 * 240];
 
 
     SimpleGraphics() {
 
         for (int j = 0; j < 256 * 240; j++) {
-            buffer[j] = Color.BLACK;
+            visibleBuffer[j] = Color.BLACK;
         }
 
 
@@ -49,7 +49,7 @@ public enum SimpleGraphics {
 
 
     public void addPixel(Integer curPixel, Integer curLine, Integer color, Palette curPalette) {
-        buffer[(256 * curLine) + curPixel] = curPalette.getColor(color);
+        visibleBuffer[(256 * curLine) + curPixel] = curPalette.getColor(color);
 
     }
 
@@ -59,12 +59,6 @@ public enum SimpleGraphics {
 
     class GPanel extends JPanel implements ActionListener {
         Timer timer = new Timer(16, this);
-        int x = 5, y = 5;
-        int h = 20, w = 20;
-        int xi = 10, yi = 10;
-
-
-
 
         public GPanel() {
             super();
@@ -85,7 +79,7 @@ public enum SimpleGraphics {
             PPU.INSTANCE.drawScreen();
 
             for (int i = 0; i < 256 * 240; i++) {
-                g.setColor(buffer[i]);
+                g.setColor(visibleBuffer[i]);
 
 
                 int x = i % 256;
@@ -94,11 +88,7 @@ public enum SimpleGraphics {
                 g.fillRect(x, y, scale, scale);
                 //g.drawLine(x, y, x+scale-1, y+scale-1);
                 //g.setColor(Color.BLACK);
-            }
-
-            //g.drawRect(x, y, w, h);
-
-
+            }           
 
         }
 
@@ -110,7 +100,7 @@ public enum SimpleGraphics {
             repaint();
 
             for (int j = 0; j < 256 * 240; j++) {
-                buffer[j] = Color.BLACK;
+                visibleBuffer[j] = Color.BLACK;
             }
 
 

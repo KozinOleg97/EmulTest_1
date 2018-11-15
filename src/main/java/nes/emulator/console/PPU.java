@@ -34,13 +34,25 @@ public enum PPU {
 
     private byte[] PPUMemory;
     public byte[] OAM;   //separate address space
-    public Byte[] OAM2;
-    public Byte[] OAM2XCounters;
+
+    private static class OAM2Struct {
+        public static Byte[] mem;
+        public static Byte[] xCounters;
+
+        public static Integer index;
+
+        OAM2Struct() {
+            mem = new Byte[4 * 8];
+            xCounters = new Byte[8];
+            index = 0;
+        }
+
+    }
+
+    OAM2Struct OAM2 = new OAM2Struct();
 
     private boolean flagSizeOfSprite = true;
     private boolean flagTableOfSprites = true;
-
-    private Integer OAM2Index = 0;
 
     private Integer activSprite = -1;
     Palette palette0 = new Palette(Color.GRAY, Color.red, Color.BLUE, Color.ORANGE);
@@ -48,7 +60,6 @@ public enum PPU {
 
     PPU() {
         PPUMemory = new byte[64 * 256]; //16 Kb 16384 Byte
-
 
 
         try {
@@ -64,12 +75,6 @@ public enum PPU {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-
-
-        OAM2 = new Byte[4 * 8];
-        OAM2XCounters = new Byte[8];
-
-
     }
 
     private void PPUMemRnd() {
@@ -78,7 +83,6 @@ public enum PPU {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-
 
 
         try {
@@ -93,18 +97,17 @@ public enum PPU {
     private void loadSpriteToOAM2(int spriteNumb) { // 1 спрайт из OAM в OAM2
 
 
-        OAM2XCounters[OAM2Index / 4] = OAM[spriteNumb + 3];
+        OAM2.xCounters[OAM2.index / 4] = OAM[spriteNumb + 3];
 
         for (int i = 0; i < 4; i++) {
-            OAM2[OAM2Index++] = OAM[spriteNumb + i];
+            OAM2.mem[OAM2.index++] = OAM[spriteNumb + i];
         }
-
 
     }
 
 
     private void fillOAMM2(Integer line) { //заполняет oam2 c проверкой на перебор спрайтов в линии
-        OAM2Index = 0;
+        OAM2.index = 0;
         Byte sizeOfSprite = 8;
         if (!flagSizeOfSprite) {
             sizeOfSprite = 16;
@@ -112,7 +115,7 @@ public enum PPU {
 
         Integer nubm = 0;
         for (int i = 0; i < 256; i = i + 4) { //перебор ОАМ
-            if ((line >= (OAM[i]&0xFF)) && (line < (OAM[i]&0xFF) + sizeOfSprite)) {
+            if ((line >= (OAM[i] & 0xFF)) && (line < (OAM[i] & 0xFF) + sizeOfSprite)) {
                 nubm++;
                 if (nubm < 8) {
                     loadSpriteToOAM2(i);
@@ -159,20 +162,22 @@ public enum PPU {
 
         Integer curSpriteLine = null;
 
-        curSpriteLine = curScreenLine - (OAM2[(activSprite * 4)]&0xFF);
+        curSpriteLine = curScreenLine - (OAM2.mem[(activSprite * 4)] & 0xFF);
 
-        Integer spriteX = (curPixelOnScreen - OAM2[(activSprite * 4) + 3] & 0xFF);
+        Integer spriteX = (curPixelOnScreen - OAM2.mem[(activSprite * 4) + 3] & 0xFF);
 
-        Integer addr = OAM2[(activSprite * 4) + 1] & 0xFF;
+        Integer addr = OAM2.mem[(activSprite * 4) + 1] & 0xFF;
 
         if (flagSizeOfSprite) {   // if 8x8
-            addr*=16; addr+=curSpriteLine;
+            addr *= 16;
+            addr += curSpriteLine;
             addr += flagTableOfSprites == false ? 0 : 4096;
         } else {//if 8x16
             Integer addr1High = addr & ~0x01;
             Integer addr1Low = addr & ~0xfe;
-            if(curSpriteLine>=8) addr1High |= 1;
-            addr1High*=16; addr1High+=curSpriteLine;
+            if (curSpriteLine >= 8) addr1High |= 1;
+            addr1High *= 16;
+            addr1High += curSpriteLine;
 
             addr = addr1Low * 4096 + addr1High;
         }
@@ -186,7 +191,7 @@ public enum PPU {
 
         Integer resBit = bit1 + bit2 * 2;
 
-        if (spriteX == 7 || curPixelOnScreen>=XSize-1) {
+        if (spriteX == 7 || curPixelOnScreen >= XSize - 1) {
             activSprite = -1;
         }
 
@@ -195,17 +200,17 @@ public enum PPU {
     }
 
     private void decrementXPosition() {
-        for (int i = 0; i < OAM2Index; i = i + 4) {
+        for (int i = 0; i < OAM2.index; i = i + 4) {
             //&0xFF  - для преобразования знакового Bite в беззнаковый Integer
 
-            OAM2XCounters[i / 4]--;
+            OAM2.xCounters[i / 4]--;
         }
     }
 
     private void checkXPosition() {
-        for (int i = 0; i < OAM2Index; i = i + 4) {
+        for (int i = 0; i < OAM2.index; i = i + 4) {
 
-            if ((OAM2XCounters[i / 4] & 0xFF) == 0) {
+            if ((OAM2.xCounters[i / 4] & 0xFF) == 0) {
                 activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
             }
         }
