@@ -1,5 +1,7 @@
 package nes.emulator.console;
 
+import nes.emulator.cartridge.GenericCartridge;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,12 +33,15 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
      */
     private Byte[] mainMemory;
     private Logger log;
+    private GenericCartridge mapperMemory;
 
-    public Memory() {
+    public Memory(GenericCartridge c) {
         mainMemory = new Byte[8 * 256];
         for (int i = 0; i < mainMemory.length; i++) {
             mainMemory[i]=0;
         }
+        log = Logger.getLogger("memory.java");
+        mapperMemory = c;
     }
 
     Byte getMemAt(Short addr)
@@ -48,9 +53,10 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 if((addr&0x1800)!=0) log.log(Level.FINE, "RAM mirroring at "+Integer.toHexString(addr));
                 return mainMemory[addr&0x07FF];
             case 0x2000:
+            case 0x3000:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:
-                throw new java.lang.UnsupportedOperationException("Not supported yet.");
+                return mapperMemory.getCPUMemAt(addr);
         }
     }
 
@@ -76,12 +82,14 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
         {
             case 0:
             case 0x1000:
+                if((addr&0x1800)!=0) log.log(Level.FINE, "RAM mirroring at "+Integer.toHexString(addr));
                 mainMemory[addr&0x7FF]=val;
                 return true;
             case 0x2000:
+            case 0x3000:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:
-                throw new java.lang.UnsupportedOperationException("Not supported yet.");
+                return mapperMemory.setCPUMemAt(addr, val);
         }
     }
 

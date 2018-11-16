@@ -47,7 +47,7 @@ public class Proc {
     {
         regA = regX = regY = 0;
         regS = (byte)0xFF;
-        regPC = 0;
+        regPC = mem.getMemAtW((short)0xFFFC);
         m=mem;
         log = Logger.getLogger("proc.java");
         log.setLevel(Level.ALL);
