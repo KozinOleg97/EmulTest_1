@@ -8,8 +8,8 @@ package nes.emulator.console;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Proc {
-
+public enum Proc {
+    INSTANCE;
 
     private byte regA;
     private byte regX;
@@ -20,37 +20,44 @@ public class Proc {
     private Logger log;
 
     // регистр флагов
-        private byte C; //:1; // carry
-        private byte Z; //:1; // zero
-        private byte I; //:1; // interrupt 0==enabled
-        private byte D; //:1; // decimal mode
-        //private byte B; //:1; // currently in break(BRK) interrupt
-        //private byte NU; //:1; // always 1
-        private byte V; //:1; // oVerflow
-        private byte N; //:1; // negative(?)
+    private byte C; //:1; // carry
+    private byte Z; //:1; // zero
+    private byte I; //:1; // interrupt 0==enabled
+    private byte D; //:1; // decimal mode
+    //private byte B; //:1; // currently in break(BRK) interrupt
+    //private byte NU; //:1; // always 1
+    private byte V; //:1; // oVerflow
+    private byte N; //:1; // negative(?)
 
 
     private void setZ(byte z) {
-        Z = (byte)(z==0?1:0);
+        Z = (byte) (z == 0 ? 1 : 0);
     }
 
     private void setN(byte n) {
-        N = (byte)((n&0x80)==0?0:1);
+        N = (byte) ((n & 0x80) == 0 ? 0 : 1);
     }
 
-    private void setC(int c) { C = (byte)(c>>8&1);}
+    private void setC(int c) {
+        C = (byte) (c >> 8 & 1);
+    }
 
 
     private Memory m;
 
-    public Proc(Memory mem)
-    {
-        regA = regX = regY = 0;
-        regS = (byte)0xFF;
-        regPC = mem.getMemAtW((short)0xFFFC);
-        m=mem;
+    public void init() {
+        m = Memory.INSTANCE;
+        regPC = m.getMemAtW((short) 0xFFFC);
+        //m=mem;
+
         log = Logger.getLogger("proc.java");
         log.setLevel(Level.ALL);
+    }
+
+    Proc() {
+        regA = regX = regY = 0;
+        regS = (byte) 0xFF;
+
     }
 
 
@@ -92,8 +99,8 @@ public class Proc {
         Byte operlo = 0;
         switch (addrmode) {
             case 0:
-                opAddr = (short)(255 & (regX + m.getMemAt(regPC++)));
-                opAddr = (short)m.getMemAtWarpedW(opAddr);
+                opAddr = (short) (255 & (regX + m.getMemAt(regPC++)));
+                opAddr = (short) m.getMemAtWarpedW(opAddr);
                 operlo = m.getMemAt(opAddr);
                 break;
             case 1:
@@ -105,28 +112,28 @@ public class Proc {
                 operlo = m.getMemAt(opAddr);
                 break;
             case 3:
-                opAddr = (short)(m.getMemAt(regPC)|m.getMemAt((short)(regPC+1))<<8);
+                opAddr = (short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8);
                 operlo = m.getMemAt(opAddr);
                 regPC += 2;
                 break;
             case 4:
-                opAddr = (short)(m.getMemAtWarpedW(m.getMemAt(regPC++).shortValue())+regY);
+                opAddr = (short) (m.getMemAtWarpedW(m.getMemAt(regPC++).shortValue()) + regY);
                 operlo = m.getMemAt(opAddr);
                 break;
             case 5:
-                byte pc_i = m.getMemAt((short)(regPC - 1)), pc_0 = m.getMemAt(regPC);
-                opAddr = m.getMemAt((short)(255 & (pc_0 + (pc_i == 0x96 || pc_i == 0xB6 ? regY : regX))));
+                byte pc_i = m.getMemAt((short) (regPC - 1)), pc_0 = m.getMemAt(regPC);
+                opAddr = m.getMemAt((short) (255 & (pc_0 + (pc_i == 0x96 || pc_i == 0xB6 ? regY : regX))));
                 regPC++;
                 operlo = m.getMemAt(opAddr);
                 break;
             case 6:
-                opAddr = (short)(regY + m.getMemAtW( (short)(m.getMemAt(regPC)|m.getMemAt((short)(regPC+1))<<8) ));
+                opAddr = (short) (regY + m.getMemAtW((short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8)));
                 regPC += 2;
                 operlo = m.getMemAt(opAddr);
                 break;
             case 7:
-                pc_i = m.getMemAt((short)(regPC - 1));
-                opAddr = (short)((pc_i==0xBE?regY:regX) + m.getMemAtW( (short)(m.getMemAt(regPC)|m.getMemAt((short)(regPC+1))<<8) ));
+                pc_i = m.getMemAt((short) (regPC - 1));
+                opAddr = (short) ((pc_i == 0xBE ? regY : regX) + m.getMemAtW((short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8)));
                 regPC += 2;
                 operlo = m.getMemAt(opAddr);
                 break;
@@ -134,27 +141,24 @@ public class Proc {
         return opAddr;
     }
 
-    short takereladdr()
-    {
+    short takereladdr() {
         short branchoffset = m.getMemAt(regPC++);
-        int branchaddress = regPC+branchoffset;
-        return (short)branchaddress;
+        int branchaddress = regPC + branchoffset;
+        return (short) branchaddress;
     }
 
-    void CMP(byte a, byte b)
-    {
-        int cmp = ((a&0xff)-(b&0xff));
-        byte cmpb = (byte)cmp;
+    void CMP(byte a, byte b) {
+        int cmp = ((a & 0xff) - (b & 0xff));
+        byte cmpb = (byte) cmp;
         setC(cmp);
         setZ(cmpb);
         setN(cmpb);
     }
 
-    public void Step()
-    {
+    public void Step() {
         // LDA FF, TAX, INX, STA 1,X, LDY #0
         //char* opcodes = "\xA9\xFE\xAA\xE8\x95\x01\xA4\x00";
-       
+
         byte command = m.getMemAt(regPC++);
         log.log(Level.INFO, String.format("command: %02x\n", command));
 
@@ -177,12 +181,12 @@ public class Proc {
                 //commands either work as expected or halt/nop
             case 0:
                 // сложнааааааа
-                if (comcode == 0 || ((addrmode & 1)==0 && (comcode < 5 || addrmode!=0))) break;
+                if (comcode == 0 || ((addrmode & 1) == 0 && (comcode < 5 || addrmode != 0))) break;
                 //if (comcode != 0 && ((addrmode & 1) || (comcode >= 5 && !addrmode))) {
             case 3:
                 //undocumented
             case 1:
-                log.log(Level.INFO, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short)(regPC + 1))));
+                log.log(Level.INFO, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short) (regPC + 1))));
                 // TODO: как передавать opaddr как ссылку?????????
                 opaddr = takeoperaddr(addrmode);
                 oper = m.getMemAt(opaddr);
@@ -193,13 +197,12 @@ public class Proc {
         // exec command
         switch (comclass) {
             case 0:
-                if(addrmode==4)
-                {
+                if (addrmode == 4) {
                     short newaddr = takereladdr();
                     // рип олег 09.11 земля пухом братишка
                     int branches[] = {N, V, C, Z};
-                    int branchtaken = comcode&1^1;
-                    branchtaken ^= branches[comcode>>1&3];
+                    int branchtaken = comcode & 1 ^ 1;
+                    branchtaken ^= branches[comcode >> 1 & 3];
                     /*int branchtaken = 0;
                     switch(comcode)
                     {
@@ -221,223 +224,218 @@ public class Proc {
                             break;
                     }
                     if((comcode&1)==0) branchtaken = 1-branchtaken;*/
-                    if(branchtaken==1) regPC=newaddr;
-                    log.log(Level.INFO, String.format("BRANCH. Cond(%02x), TGT", branches[comcode>>1&3], newaddr));
+                    if (branchtaken == 1) regPC = newaddr;
+                    log.log(Level.INFO, String.format("BRANCH. Cond(%02x), TGT", branches[comcode >> 1 & 3], newaddr));
                 } else
-                switch (comcode) {
-                    case 0:
-                        switch(addrmode)
-                        {
-                            case 0:
-                                short stackaddr = (short)(0x100 + (regS&0xFF));
-                                int P = C | (Z<<1) | (I<<2) | (D<<3) | (1<<4) | (1<<5) | (V<<6) | (N<<7);
-                                regPC++;
-                                m.setMemAt(stackaddr--, (byte)(regPC>>8));
-                                m.setMemAt(stackaddr--, (byte)regPC);
-                                m.setMemAt(stackaddr, (byte)(P));
-                                regS-=3;
-                                I=1;
-                                log.log(Level.INFO, String.format("BRK. RET(%02x)", regPC));
-                                regPC = m.getMemAtW((short)0xFFFE);
-                                break;
-                            case 2:
-                                stackaddr = (short)(0x100 + (regS&0xFF));
-                                P = C | (Z<<1) | (I<<2) | (D<<3) | (1<<5) | (V<<6) | (N<<7);
-                                log.log(Level.INFO, String.format("PHP. P(%02x) => [S](%02x)", P, m.getMemAt(stackaddr)));
-                                m.setMemAt(stackaddr, (byte)(P));
-                                regS--;
-                                break;
-                            case 6:
-                                log.log(Level.INFO, String.format("CLC. C(%02x)", C));
-                                C=0;
-                                break;
-                        }
-                        break;
-                    case 1:
-                        switch(addrmode)
-                        {
-                            case 0:
-                                short stackaddr = (short)(0x100 + (regS&0xFF));
-                                short jsraddr = m.getMemAtW(regPC++);
-                                m.setMemAt(stackaddr--, (byte)(regPC>>8));
-                                m.setMemAt(stackaddr, (byte)regPC);
-                                regPC=jsraddr;
-                                regS-=2;
-                                log.log(Level.INFO, String.format("JSR. TGT(%02x)", regPC));
-                                break;
-                            case 1:
-                            case 3:
-                                log.log(Level.INFO, String.format("BIT. M(%02x) <&> A(%02x)", oper, regA));
-                                int bitimterm = regA&oper&0xFF;
-                                byte bitimtermb = (byte)bitimterm;
-                                setZ(bitimtermb);
-                                setN(bitimtermb);
-                                V = (byte)((bitimterm&0x40)==0?0:1);
-                                break;
-                            case 2:
-                                regS++;
-                                stackaddr = (short)(0x100 + (regS&0xFF));
-                                int P = C | (Z<<1) | (I<<2) | (D<<3) | (1<<5) | (V<<6) | (N<<7);
-                                byte NP = m.getMemAt(stackaddr);
-                                log.log(Level.INFO, String.format("PLP. [S](%02x) => P(%02x)", NP, P));
-                                C = (byte)(NP&1);
-                                Z = (byte)(NP>>1&1);
-                                I = (byte)(NP>>2&1);
-                                D = (byte)(NP>>3&1);
-                                V = (byte)(NP>>6&1);
-                                N = (byte)(NP>>7&1);
-                                break;
-                            case 6:
-                                log.log(Level.INFO, String.format("SEC. C(%02x)", C));
-                                C=1;
-                                break;
-                        }
-                        break;
-                    case 2:
-                        switch (addrmode)
-                        {
-                            case 0:
+                    switch (comcode) {
+                        case 0:
+                            switch (addrmode) {
+                                case 0:
+                                    short stackaddr = (short) (0x100 + (regS & 0xFF));
+                                    int P = C | (Z << 1) | (I << 2) | (D << 3) | (1 << 4) | (1 << 5) | (V << 6) | (N << 7);
+                                    regPC++;
+                                    m.setMemAt(stackaddr--, (byte) (regPC >> 8));
+                                    m.setMemAt(stackaddr--, (byte) regPC);
+                                    m.setMemAt(stackaddr, (byte) (P));
+                                    regS -= 3;
+                                    I = 1;
+                                    log.log(Level.INFO, String.format("BRK. RET(%02x)", regPC));
+                                    regPC = m.getMemAtW((short) 0xFFFE);
+                                    break;
+                                case 2:
+                                    stackaddr = (short) (0x100 + (regS & 0xFF));
+                                    P = C | (Z << 1) | (I << 2) | (D << 3) | (1 << 5) | (V << 6) | (N << 7);
+                                    log.log(Level.INFO, String.format("PHP. P(%02x) => [S](%02x)", P, m.getMemAt(stackaddr)));
+                                    m.setMemAt(stackaddr, (byte) (P));
+                                    regS--;
+                                    break;
+                                case 6:
+                                    log.log(Level.INFO, String.format("CLC. C(%02x)", C));
+                                    C = 0;
+                                    break;
+                            }
+                            break;
+                        case 1:
+                            switch (addrmode) {
+                                case 0:
+                                    short stackaddr = (short) (0x100 + (regS & 0xFF));
+                                    short jsraddr = m.getMemAtW(regPC++);
+                                    m.setMemAt(stackaddr--, (byte) (regPC >> 8));
+                                    m.setMemAt(stackaddr, (byte) regPC);
+                                    regPC = jsraddr;
+                                    regS -= 2;
+                                    log.log(Level.INFO, String.format("JSR. TGT(%02x)", regPC));
+                                    break;
+                                case 1:
+                                case 3:
+                                    log.log(Level.INFO, String.format("BIT. M(%02x) <&> A(%02x)", oper, regA));
+                                    int bitimterm = regA & oper & 0xFF;
+                                    byte bitimtermb = (byte) bitimterm;
+                                    setZ(bitimtermb);
+                                    setN(bitimtermb);
+                                    V = (byte) ((bitimterm & 0x40) == 0 ? 0 : 1);
+                                    break;
+                                case 2:
+                                    regS++;
+                                    stackaddr = (short) (0x100 + (regS & 0xFF));
+                                    int P = C | (Z << 1) | (I << 2) | (D << 3) | (1 << 5) | (V << 6) | (N << 7);
+                                    byte NP = m.getMemAt(stackaddr);
+                                    log.log(Level.INFO, String.format("PLP. [S](%02x) => P(%02x)", NP, P));
+                                    C = (byte) (NP & 1);
+                                    Z = (byte) (NP >> 1 & 1);
+                                    I = (byte) (NP >> 2 & 1);
+                                    D = (byte) (NP >> 3 & 1);
+                                    V = (byte) (NP >> 6 & 1);
+                                    N = (byte) (NP >> 7 & 1);
+                                    break;
+                                case 6:
+                                    log.log(Level.INFO, String.format("SEC. C(%02x)", C));
+                                    C = 1;
+                                    break;
+                            }
+                            break;
+                        case 2:
+                            switch (addrmode) {
+                                case 0:
 
-                                short stackaddr = (short)(0x100 + (regS&0xFF));
-                                byte NP = m.getMemAt(++stackaddr);
-                                C = (byte)(NP&1);
-                                Z = (byte)(NP>>1&1);
-                                I = (byte)(NP>>2&1);
-                                D = (byte)(NP>>3&1);
-                                V = (byte)(NP>>6&1);
-                                N = (byte)(NP>>7&1);
-                                stackaddr++;
-                                regPC = m.getMemAtW(stackaddr);
-                                regS+=3;
-                                log.log(Level.INFO, String.format("RTI. TGT(%02x)", regPC));
-                                break;
-                            case 2:
-                                stackaddr = (short)(0x100 + (regS&0xFF));
-                                log.log(Level.INFO, String.format("PHA. A(%02x) => [S](%02x)", regA, m.getMemAt(stackaddr)));
-                                m.setMemAt(stackaddr, regA);
-                                regS--;
-                                break;
-                            case 3:
-                                short jumptgt = m.getMemAtW(regPC);
-                                log.log(Level.INFO, String.format("JMP tgt: %04x", jumptgt));
-                                regPC=jumptgt;
-                                break;
-                            case 6:
-                                log.log(Level.INFO, String.format("CLI. I(%02x)", I));
-                                I=0;
-                                break;
-                        }
-                        break;
-                    case 3:
-                        switch(addrmode)
-                        {
-                            case 0:
-                                regS++;
-                                short stackaddr = (short)(0x100 + (regS&0xFF));
-                                regPC = m.getMemAtW(stackaddr);
-                                regPC++;
-                                regS++;
-                                log.log(Level.INFO, String.format("RTS. TGT(%02x)", regPC));
-                                break;
-                            case 2:
-                                regS++;
-                                stackaddr = (short)(0x100 + (regS&0xFF));
-                                byte NA = m.getMemAt(stackaddr);
-                                log.log(Level.INFO, String.format("PLA. [S](%02x) => A(%02x)", NA, regA));
-                                regA=NA;
-                                setZ(regA);
-                                setN(regA);
-                                break;
-                            case 3:
-                                short jumptgta = m.getMemAtW(regPC);
-                                short jumptgt = m.getMemAtWarpedW(jumptgta);
-                                log.log(Level.INFO, String.format("JMP tgt: %04x", jumptgt));
-                                regPC=jumptgt;
-                                break;
-                            case 6:
-                                log.log(Level.INFO, String.format("SEI. I(%02x)", I));
-                                I=1;
-                                break;
-                        }
-                        break;
-                    case 4:
-                        switch(addrmode)
-                        {
-                            case 1:
-                            case 3:
-                            case 5:
-                                log.log(Level.INFO, String.format("STY. Y(%02x) => M(%02x)", regY, oper));
-                                m.setMemAt(opaddr, regY);
-                                break;
-                            case 2:
-                                regY--;
-                                log.log(Level.INFO, String.format("DEY. result: %02x", regY));
-                                setZ(regY);
-                                setN(regY);
-                                break;
-                            case 6:
-                                log.log(Level.INFO, String.format("TYA. Y(%02x) => A(%02x)", regY, regA));
-                                regA = regY;
-                                setZ(regA);
-                                setN(regA);
-                                break;
-                        }
-                    case 5:
-                        switch (addrmode) {
-                            case 0:
-                            case 1:
-                            case 3:
-                            case 5:
-                            case 7:
-                                log.log(Level.INFO, String.format("LDY. M(%02x) => Y(%02x)", oper, regY));
-                                regY = oper;
-                                setZ(regY);
-                                setN(regY);
-                                break;
-                            case 2:
-                                log.log(Level.INFO, String.format("TAY. A(%02x) => Y(%02x)", regA, regY));
-                                regY = regA;
-                                setZ(regY);
-                                setN(regY);
-                                break;
-                            case 6:
-                                log.log(Level.INFO, String.format("CLV. V(%02x)", V));
-                                V=0;
-                                break;
-                        }
-                        break;
-                    case 6:
-                        switch (addrmode) {
-                            case 0:
-                            case 1:
-                            case 3:
-                                log.log(Level.INFO, String.format("CPY. M(%02x) <> Y(%02x)", oper, regY));
-                                CMP(regY, oper);
-                                break;
-                            case 2:
-                                regY++;
-                                log.log(Level.INFO, String.format("INY. result: %02x", regY));
-                                setZ(regY);
-                                setN(regY);
-                                break;
-                        }
-                        break;
-                    case 7:
-                        switch (addrmode) {
-                            case 0:
-                            case 1:
-                            case 3:
-                                log.log(Level.INFO, String.format("CPX. M(%02x) <> X(%02x)", oper, regX));
-                                CMP(regX, oper);
-                                break;
-                            case 2:
-                                regX++;
-                                log.log(Level.INFO, String.format("INX. result: %02x", regX));
-                                setZ(regX);
-                                setN(regX);
-                                break;
-                        }
-                }
+                                    short stackaddr = (short) (0x100 + (regS & 0xFF));
+                                    byte NP = m.getMemAt(++stackaddr);
+                                    C = (byte) (NP & 1);
+                                    Z = (byte) (NP >> 1 & 1);
+                                    I = (byte) (NP >> 2 & 1);
+                                    D = (byte) (NP >> 3 & 1);
+                                    V = (byte) (NP >> 6 & 1);
+                                    N = (byte) (NP >> 7 & 1);
+                                    stackaddr++;
+                                    regPC = m.getMemAtW(stackaddr);
+                                    regS += 3;
+                                    log.log(Level.INFO, String.format("RTI. TGT(%02x)", regPC));
+                                    break;
+                                case 2:
+                                    stackaddr = (short) (0x100 + (regS & 0xFF));
+                                    log.log(Level.INFO, String.format("PHA. A(%02x) => [S](%02x)", regA, m.getMemAt(stackaddr)));
+                                    m.setMemAt(stackaddr, regA);
+                                    regS--;
+                                    break;
+                                case 3:
+                                    short jumptgt = m.getMemAtW(regPC);
+                                    log.log(Level.INFO, String.format("JMP tgt: %04x", jumptgt));
+                                    regPC = jumptgt;
+                                    break;
+                                case 6:
+                                    log.log(Level.INFO, String.format("CLI. I(%02x)", I));
+                                    I = 0;
+                                    break;
+                            }
+                            break;
+                        case 3:
+                            switch (addrmode) {
+                                case 0:
+                                    regS++;
+                                    short stackaddr = (short) (0x100 + (regS & 0xFF));
+                                    regPC = m.getMemAtW(stackaddr);
+                                    regPC++;
+                                    regS++;
+                                    log.log(Level.INFO, String.format("RTS. TGT(%02x)", regPC));
+                                    break;
+                                case 2:
+                                    regS++;
+                                    stackaddr = (short) (0x100 + (regS & 0xFF));
+                                    byte NA = m.getMemAt(stackaddr);
+                                    log.log(Level.INFO, String.format("PLA. [S](%02x) => A(%02x)", NA, regA));
+                                    regA = NA;
+                                    setZ(regA);
+                                    setN(regA);
+                                    break;
+                                case 3:
+                                    short jumptgta = m.getMemAtW(regPC);
+                                    short jumptgt = m.getMemAtWarpedW(jumptgta);
+                                    log.log(Level.INFO, String.format("JMP tgt: %04x", jumptgt));
+                                    regPC = jumptgt;
+                                    break;
+                                case 6:
+                                    log.log(Level.INFO, String.format("SEI. I(%02x)", I));
+                                    I = 1;
+                                    break;
+                            }
+                            break;
+                        case 4:
+                            switch (addrmode) {
+                                case 1:
+                                case 3:
+                                case 5:
+                                    log.log(Level.INFO, String.format("STY. Y(%02x) => M(%02x)", regY, oper));
+                                    m.setMemAt(opaddr, regY);
+                                    break;
+                                case 2:
+                                    regY--;
+                                    log.log(Level.INFO, String.format("DEY. result: %02x", regY));
+                                    setZ(regY);
+                                    setN(regY);
+                                    break;
+                                case 6:
+                                    log.log(Level.INFO, String.format("TYA. Y(%02x) => A(%02x)", regY, regA));
+                                    regA = regY;
+                                    setZ(regA);
+                                    setN(regA);
+                                    break;
+                            }
+                        case 5:
+                            switch (addrmode) {
+                                case 0:
+                                case 1:
+                                case 3:
+                                case 5:
+                                case 7:
+                                    log.log(Level.INFO, String.format("LDY. M(%02x) => Y(%02x)", oper, regY));
+                                    regY = oper;
+                                    setZ(regY);
+                                    setN(regY);
+                                    break;
+                                case 2:
+                                    log.log(Level.INFO, String.format("TAY. A(%02x) => Y(%02x)", regA, regY));
+                                    regY = regA;
+                                    setZ(regY);
+                                    setN(regY);
+                                    break;
+                                case 6:
+                                    log.log(Level.INFO, String.format("CLV. V(%02x)", V));
+                                    V = 0;
+                                    break;
+                            }
+                            break;
+                        case 6:
+                            switch (addrmode) {
+                                case 0:
+                                case 1:
+                                case 3:
+                                    log.log(Level.INFO, String.format("CPY. M(%02x) <> Y(%02x)", oper, regY));
+                                    CMP(regY, oper);
+                                    break;
+                                case 2:
+                                    regY++;
+                                    log.log(Level.INFO, String.format("INY. result: %02x", regY));
+                                    setZ(regY);
+                                    setN(regY);
+                                    break;
+                            }
+                            break;
+                        case 7:
+                            switch (addrmode) {
+                                case 0:
+                                case 1:
+                                case 3:
+                                    log.log(Level.INFO, String.format("CPX. M(%02x) <> X(%02x)", oper, regX));
+                                    CMP(regX, oper);
+                                    break;
+                                case 2:
+                                    regX++;
+                                    log.log(Level.INFO, String.format("INX. result: %02x", regX));
+                                    setZ(regX);
+                                    setN(regX);
+                                    break;
+                            }
+                    }
                 break;
             case 1:
                 switch (comcode) {
@@ -462,11 +460,11 @@ public class Proc {
                     case 3:
                         log.log(Level.INFO, String.format("ADC. M(%02x) +> A(%02x)", oper, regA));
                         // bytes get sign-extended into ints. mask the lowest byte to get carry
-                        int intermediate = ((regA&0xff)+(oper&0xff)+C);
+                        int intermediate = ((regA & 0xff) + (oper & 0xff) + C);
                         setC(intermediate);
-                        regA = (byte)intermediate;
+                        regA = (byte) intermediate;
                         //Overflow occurs if (M^result)&(N^result)&0x80 is nonzero. That is, if the sign of both inputs is different from the sign of the result.
-                        V = (byte)(((regA^intermediate)&(oper^intermediate)&80)==0?0:1);
+                        V = (byte) (((regA ^ intermediate) & (oper ^ intermediate) & 80) == 0 ? 0 : 1);
                         setZ(regA);
                         setN(regA);
                         break;
@@ -475,7 +473,7 @@ public class Proc {
                         m.setMemAt(opaddr, regA);
                         break;
                     case 5:
-                        regA = (byte)oper;
+                        regA = (byte) oper;
                         log.log(Level.INFO, String.format("LDA. operand: %02x", regA));
                         setZ(oper);
                         setN(oper);
@@ -491,12 +489,12 @@ public class Proc {
                         // borrow is complement of carry. 1^1=0; 1^0=1
                         // M - N - B
                         // = M + (ones complement of N) + C
-                        int sbcinterm = ((regA&0xff)+(~oper&0xff)+C);
+                        int sbcinterm = ((regA & 0xff) + (~oper & 0xff) + C);
                         // get borrow value
                         setC(sbcinterm);
                         //Overflow occurs if (M^result)&(N^result)&0x80 is nonzero. That is, if the sign of both inputs is different from the sign of the result.
-                        V = (byte)(((regA^sbcinterm)&(~oper^sbcinterm)&0x80)==0?0:1);
-                        regA = (byte)sbcinterm;
+                        V = (byte) (((regA ^ sbcinterm) & (~oper ^ sbcinterm) & 0x80) == 0 ? 0 : 1);
+                        regA = (byte) sbcinterm;
                         setZ(regA);
                         setN(regA);
                         break;
@@ -506,28 +504,26 @@ public class Proc {
             case 2:
                 switch (comcode) {
                     case 0:
-                        switch(addrmode)
-                        {
+                        switch (addrmode) {
                             case 1:
                             case 3:
                             case 5:
                             case 7:
                                 log.log(Level.INFO, String.format("ASL. M: %02x", oper));
-                                m.setMemAt(opaddr, oper<<=1);
+                                m.setMemAt(opaddr, oper <<= 1);
                                 setZ(oper);
                                 setN(oper);
                                 break;
                             case 2:
                                 log.log(Level.INFO, String.format("ASL. A: %02x", regA));
-                                regA<<=1;
+                                regA <<= 1;
                                 setZ(regA);
                                 setN(regA);
                                 break;
                         }
                         break;
                     case 1:
-                        switch(addrmode)
-                        {
+                        switch (addrmode) {
                             case 1:
                             case 3:
                             case 5:
@@ -536,43 +532,41 @@ public class Proc {
                                 // to roll left: shift left normally
                                 // shift right 7 then mask the lowest bit (java sign-extends bytes into ints. for negative numbers this means all leftmost bits become 1's)
                                 // operator precedence: <</>> > & > |
-                                oper = (byte)(oper<<1 | oper>>7&0x1);
+                                oper = (byte) (oper << 1 | oper >> 7 & 0x1);
                                 m.setMemAt(opaddr, oper);
                                 setZ(oper);
                                 setN(oper);
                                 break;
                             case 2:
                                 log.log(Level.INFO, String.format("ROL. A: %02x", regA));
-                                regA = (byte)(regA<<1 | regA>>7&0x1);
+                                regA = (byte) (regA << 1 | regA >> 7 & 0x1);
                                 setZ(regA);
                                 setN(regA);
                                 break;
                         }
                         break;
                     case 2:
-                        switch(addrmode)
-                        {
+                        switch (addrmode) {
                             case 1:
                             case 3:
                             case 5:
                             case 7:
                                 log.log(Level.INFO, String.format("ASR. M: %02x", oper));
-                                oper = (byte)((oper&0xff)>>1);
+                                oper = (byte) ((oper & 0xff) >> 1);
                                 m.setMemAt(opaddr, oper);
                                 setZ(oper);
                                 setN(oper);
                                 break;
                             case 2:
                                 log.log(Level.INFO, String.format("ASR. A: %02x", regA));
-                                regA = (byte)((regA&0xff)>>1);
+                                regA = (byte) ((regA & 0xff) >> 1);
                                 setZ(regA);
                                 setN(regA);
                                 break;
                         }
                         break;
                     case 3:
-                        switch(addrmode)
-                        {
+                        switch (addrmode) {
                             case 1:
                             case 3:
                             case 5:
@@ -581,22 +575,21 @@ public class Proc {
                                 // to roll right: shift right  then mask the lowest 7 bits due to sign-extension
                                 // shift left 7 normally
                                 // operator precedence: <</>> > & > |
-                                oper = (byte)(oper>>1&0x7F | oper<<7);
+                                oper = (byte) (oper >> 1 & 0x7F | oper << 7);
                                 m.setMemAt(opaddr, oper);
                                 setZ(oper);
                                 setN(oper);
                                 break;
                             case 2:
                                 log.log(Level.INFO, String.format("ROR. A: %02x", regA));
-                                regA = (byte)(regA>>1&0x7F | regA<<7);
+                                regA = (byte) (regA >> 1 & 0x7F | regA << 7);
                                 setZ(regA);
                                 setN(regA);
                                 break;
                         }
                         break;
                     case 4:
-                        switch(addrmode)
-                        {
+                        switch (addrmode) {
                             case 1:
                             case 3:
                             case 5:
@@ -605,13 +598,13 @@ public class Proc {
                                 break;
                             case 2:
                                 log.log(Level.INFO, String.format("TXA. X(%02x) => A(%02x)", regX, regA));
-                                regA=regX;
+                                regA = regX;
                                 setZ(regA);
                                 setN(regA);
                                 break;
                             case 6:
                                 log.log(Level.INFO, String.format("TXS. X(%02x) => S(%02x)", regX, regS));
-                                regS=regX;
+                                regS = regX;
                                 break;
                         }
                         break;
@@ -635,21 +628,20 @@ public class Proc {
                                 break;
                             case 6:
                                 log.log(Level.INFO, String.format("TSX. S(%02x) => X(%02x)", regS, regX));
-                                regX=regS;
+                                regX = regS;
                                 setZ(regX);
                                 setN(regX);
                                 break;
                         }
                         break;
                     case 6:
-                        if ((addrmode & 1) !=0) {
-                            m.setMemAt(opaddr, (byte)(oper-1));
+                        if ((addrmode & 1) != 0) {
+                            m.setMemAt(opaddr, (byte) (oper - 1));
                             oper = m.getMemAt(opaddr);
                             log.log(Level.INFO, String.format("DEC. result: %02x", m.getMemAt(opaddr)));
                             setZ(oper);
                             setN(oper);
-                        } else if(addrmode==2)
-                        {
+                        } else if (addrmode == 2) {
                             regX--;
                             log.log(Level.INFO, String.format("DEX. result: %02x", regY));
                             setZ(regX);
@@ -657,8 +649,8 @@ public class Proc {
                         } else log.log(Level.INFO, "NOP");
                         break;
                     case 7:
-                        if ((addrmode & 1) !=0) {
-                            m.setMemAt(opaddr, (byte)(oper+1));
+                        if ((addrmode & 1) != 0) {
+                            m.setMemAt(opaddr, (byte) (oper + 1));
                             oper = m.getMemAt(opaddr);
                             log.log(Level.INFO, String.format("INC. result: %02x", oper));
                             setZ(oper);

@@ -154,7 +154,7 @@ public enum PPU {
         if (activSprite != -1) {
             Integer spriteColor = getActiveSpriteNextPixel(curPixel, curLine);
 
-            if (spriteColor == 0){                            // if transparent --> draw background pixel --> return
+            if (spriteColor == 0) {                            // if transparent --> draw background pixel --> return
                 Integer bgColor = getBackgroundPixel(curPixel, curLine);
                 SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, bgColor, palette1);
 

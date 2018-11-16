@@ -5,7 +5,8 @@ import nes.emulator.cartridge.GenericCartridge;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Memory {
+public enum Memory {
+    INSTANCE;
 
     /*
     Address range	Size	Device
@@ -35,23 +36,25 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
     private Logger log;
     private GenericCartridge mapperMemory;
 
-    public Memory(GenericCartridge c) {
-        mainMemory = new Byte[8 * 256];
-        for (int i = 0; i < mainMemory.length; i++) {
-            mainMemory[i]=0;
-        }
-        log = Logger.getLogger("memory.java");
+    public void init(GenericCartridge c) {
         mapperMemory = c;
     }
 
-    Byte getMemAt(Short addr)
-    {
-        switch(addr&0xF000)
-        {
+    Memory() {
+        mainMemory = new Byte[8 * 256];
+        for (int i = 0; i < mainMemory.length; i++) {
+            mainMemory[i] = 0;
+        }
+        log = Logger.getLogger("memory.java");
+
+    }
+
+    Byte getMemAt(Short addr) {
+        switch (addr & 0xF000) {
             case 0:
             case 0x1000:
-                if((addr&0x1800)!=0) log.log(Level.FINE, "RAM mirroring at "+Integer.toHexString(addr));
-                return mainMemory[addr&0x07FF];
+                if ((addr & 0x1800) != 0) log.log(Level.FINE, "RAM mirroring at " + Integer.toHexString(addr));
+                return mainMemory[addr & 0x07FF];
             case 0x2000:
             case 0x3000:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
@@ -60,30 +63,26 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
         }
     }
 
-    Short getMemAtW(Short addr)
-    {
+    Short getMemAtW(Short addr) {
         Short lo = getMemAt(addr).shortValue();
-        Short hi = getMemAt((short)(addr+1)).shortValue();
-        return (short)((hi<<8) | lo);
+        Short hi = getMemAt((short) (addr + 1)).shortValue();
+        return (short) ((hi << 8) | lo);
     }
 
-    Short getMemAtWarpedW(Short addr)
-    {
-        log.log(Level.FINE, "getMemAtWarpedW "+Integer.toHexString(addr));
+    Short getMemAtWarpedW(Short addr) {
+        log.log(Level.FINE, "getMemAtWarpedW " + Integer.toHexString(addr));
         Short lo = getMemAt(addr).shortValue();
-        Short hi = (short)(getMemAt((short)(addr&0xff00|addr+1&0xff))<<8);
-        return (short)(lo|hi);
+        Short hi = (short) (getMemAt((short) (addr & 0xff00 | addr + 1 & 0xff)) << 8);
+        return (short) (lo | hi);
     }
 
-    Boolean setMemAt(Short addr, Byte val)
-    {
+    Boolean setMemAt(Short addr, Byte val) {
 
-        switch(addr&0xF000)
-        {
+        switch (addr & 0xF000) {
             case 0:
             case 0x1000:
-                if((addr&0x1800)!=0) log.log(Level.FINE, "RAM mirroring at "+Integer.toHexString(addr));
-                mainMemory[addr&0x7FF]=val;
+                if ((addr & 0x1800) != 0) log.log(Level.FINE, "RAM mirroring at " + Integer.toHexString(addr));
+                mainMemory[addr & 0x7FF] = val;
                 return true;
             case 0x2000:
             case 0x3000:
@@ -93,10 +92,9 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
         }
     }
 
-    public void Push(Short a[])
-    {
+    public void Push(Short a[]) {
         for (int i = 0; i < a.length; i++) {
-            mainMemory[i]=a[i].byteValue();
+            mainMemory[i] = a[i].byteValue();
         }
     }
 

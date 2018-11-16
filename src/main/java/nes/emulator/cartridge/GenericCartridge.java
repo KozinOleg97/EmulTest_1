@@ -24,8 +24,8 @@ public abstract class GenericCartridge {
             int chrsize = header[1] * 8192;
             int ramsize = 8192;
             int chrramsize = 0;
-            byte rom[] = new byte[romsize+ramsize];
-            byte chr[] = new byte[chrsize+chrramsize];
+            byte rom[] = new byte[romsize + ramsize];
+            byte chr[] = new byte[chrsize + chrramsize];
             //TODO: check for trainer
             if ((header[3] & 4) != 0) is.skip(512);
 
@@ -34,7 +34,7 @@ public abstract class GenericCartridge {
             ic = new NROM();
             ic.chipsCPUROM.put(0, ic.new MemChip(rom, BankType.CPUROM));
             ic.chipsPPUROM.put(0, ic.new MemChip(chr, BankType.PPUROM));
-            ((NROM)ic).init(header[0], header[1], ramsize);
+            ((NROM) ic).init(header[0], header[1], ramsize);
             //ic.PRGRAM = new byte[ramsize];
         } catch (java.io.IOException e) {
             return null;
@@ -69,11 +69,11 @@ public abstract class GenericCartridge {
 
     public Byte getCPUMemAt(Short addr) {
         // банки не должны быть расположены друг поверх друга. Правда ведь?
-        byte res = (byte)0xFF;
+        byte res = (byte) 0xFF;
         int longaddr = addr & 0xFFFF;
         for (Bank b : banksCPUROM.values()) {
-            if(b.HitTest(longaddr))
-                res&=b.Resolve(longaddr);
+            if (b.HitTest(longaddr))
+                res &= b.Resolve(longaddr);
         }
         return res;
     }
@@ -82,35 +82,31 @@ public abstract class GenericCartridge {
         boolean res = false;
         int longaddr = addr & 0xFFFF;
         for (Bank b : banksCPUROM.values()) {
-            if(b.HitTest(longaddr))
-                res|=b.Resolve(longaddr, val);
+            if (b.HitTest(longaddr))
+                res |= b.Resolve(longaddr, val);
         }
         return res;
     }
 
-    protected void createCPUMemChip(int n, int size, BankType b)
-    {
+    protected void createCPUMemChip(int n, int size, BankType b) {
         chipsCPUROM.put(n, new MemChip(new byte[size], b));
     }
 
-    protected void setCPUMemChipAccess(int n, boolean readable, boolean writeable)
-    {
+    protected void setCPUMemChipAccess(int n, boolean readable, boolean writeable) {
         MemChip a = chipsCPUROM.get(n);
         a.readable = readable;
         a.writeable = writeable;
     }
 
-    protected void createCPUBank(int n, int CPUAddr, int size, int intAddr, int chipindex)
-    {
+    protected void createCPUBank(int n, int CPUAddr, int size, int intAddr, int chipindex) {
         banksCPUROM.put(n, new Bank(CPUAddr, size, intAddr, chipsCPUROM.get(chipindex)));
     }
 
-    protected void setCPUBank(int n, int CPUAddr, int size, int intAddr)
-    {
+    protected void setCPUBank(int n, int CPUAddr, int size, int intAddr) {
         Bank b = banksCPUROM.get(n);
         b.CPUAddr = CPUAddr;
-        b.InternalAddress=intAddr;
-        b.Size=size;
+        b.InternalAddress = intAddr;
+        b.Size = size;
     }
 
     protected Bank checkPPUInRange(Short addr) {
@@ -125,11 +121,11 @@ public abstract class GenericCartridge {
 
     public Byte getPPUMemAt(Short addr) {
         // банки не должны быть расположены друг поверх друга. Правда ведь?
-        byte res = (byte)0xFF;
+        byte res = (byte) 0xFF;
         int longaddr = addr & 0xFFFF;
         for (Bank b : banksPPUROM.values()) {
-            if(b.HitTest(longaddr))
-                res&=b.Resolve(longaddr);
+            if (b.HitTest(longaddr))
+                res &= b.Resolve(longaddr);
         }
         return res;
     }
@@ -138,69 +134,61 @@ public abstract class GenericCartridge {
         boolean res = false;
         int longaddr = addr & 0xFFFF;
         for (Bank b : banksPPUROM.values()) {
-            if(b.HitTest(longaddr))
-                res|=b.Resolve(longaddr, val);
+            if (b.HitTest(longaddr))
+                res |= b.Resolve(longaddr, val);
         }
         return res;
     }
 
-    protected void createPPUMemChip(int n, int size, BankType b)
-    {
+    protected void createPPUMemChip(int n, int size, BankType b) {
         chipsPPUROM.put(n, new MemChip(new byte[size], b));
     }
 
-    protected void setPPUMemChipAccess(int n, boolean readable, boolean writeable)
-    {
+    protected void setPPUMemChipAccess(int n, boolean readable, boolean writeable) {
         MemChip a = chipsPPUROM.get(n);
         a.readable = readable;
         a.writeable = writeable;
     }
 
-    protected void createPPUBank(int n, int PPUAddr, int size, int intAddr, int chipindex)
-    {
+    protected void createPPUBank(int n, int PPUAddr, int size, int intAddr, int chipindex) {
         banksPPUROM.put(n, new Bank(PPUAddr, size, intAddr, chipsPPUROM.get(chipindex)));
     }
 
-    protected void setPPUBank(int n, int PPUAddr, int size, int intAddr)
-    {
+    protected void setPPUBank(int n, int PPUAddr, int size, int intAddr) {
         Bank b = banksPPUROM.get(n);
         b.CPUAddr = PPUAddr;
-        b.InternalAddress=intAddr;
-        b.Size=size;
+        b.InternalAddress = intAddr;
+        b.Size = size;
     }
 
-    enum BankType
-    {
+    enum BankType {
         CPUROM,
         CPURAM1,
         PPUROM,
         PPURAM1
     }
 
-    class Bank
-    {
-        Bank(int a, int b, int c, MemChip reftgt)
-        {
-            CPUAddr=a;
-            Size=b;
-            InternalAddress=c;
-            AccTgt=reftgt;
+    class Bank {
+        Bank(int a, int b, int c, MemChip reftgt) {
+            CPUAddr = a;
+            Size = b;
+            InternalAddress = c;
+            AccTgt = reftgt;
         }
-        byte Resolve(int longaddr)
-        {
-            byte res = (byte)0xFF;
+
+        byte Resolve(int longaddr) {
+            byte res = (byte) 0xFF;
             if (inRange(longaddr, CPUAddr, Size)) {
-                if(AccTgt.readable)
+                if (AccTgt.readable)
                     res = AccTgt.data[longaddr - CPUAddr + InternalAddress];
             } else throw new IndexOutOfBoundsException("invalid Resolve() target");
             return res;
         }
 
-        boolean Resolve(int longaddr, byte val)
-        {
+        boolean Resolve(int longaddr, byte val) {
             boolean writesuccessful = false;
             if (inRange(longaddr, CPUAddr, Size)) {
-                if(AccTgt.writeable) {
+                if (AccTgt.writeable) {
                     AccTgt.data[longaddr - CPUAddr + InternalAddress] = val;
                     writesuccessful = true;
                 }
@@ -208,8 +196,7 @@ public abstract class GenericCartridge {
             return writesuccessful;
         }
 
-        boolean HitTest(int longaddr)
-        {
+        boolean HitTest(int longaddr) {
             return inRange(longaddr, CPUAddr, Size);
         }
 
@@ -219,21 +206,21 @@ public abstract class GenericCartridge {
         MemChip AccTgt;
     }
 
-    class MemChip
-    {
-        MemChip(byte d[], BankType b)
-        {
-            data=d;
-            memclass=b;
+    class MemChip {
+        MemChip(byte d[], BankType b) {
+            data = d;
+            memclass = b;
             readable = true;
-            writeable = !( b==BankType.CPUROM || b==BankType.PPUROM );
+            writeable = !(b == BankType.CPUROM || b == BankType.PPUROM);
         }
+
         byte data[];
         boolean readable;
         boolean writeable;
         BankType memclass;
 
     }
+
     private Map<Integer, Bank> banksCPUROM;
     private Map<Integer, MemChip> chipsCPUROM;
 

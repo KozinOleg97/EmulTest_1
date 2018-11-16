@@ -54,9 +54,6 @@ public enum SimpleGraphics {
     }
 
 
-
-
-
     class GPanel extends JPanel implements ActionListener {
         Timer timer = new Timer(16, this);
 
@@ -84,17 +81,17 @@ public enum SimpleGraphics {
 
                 int x = i % 256;
                 int y = i / 256;
-                x*=scale; y*=scale;
+                x *= scale;
+                y *= scale;
                 g.fillRect(x, y, scale, scale);
                 //g.drawLine(x, y, x+scale-1, y+scale-1);
                 //g.setColor(Color.BLACK);
-            }           
+            }
 
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-
 
 
             repaint();
