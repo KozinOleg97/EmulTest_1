@@ -1,12 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" inherit-compiler-output="true">
-    <exclude-output />
+<module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
+    <output url="file://$MODULE_DIR$/target/classes" />
+    <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-assimp-natives-linux.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-assimp-natives-macos.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-assimp-natives-windows.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-assimp.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-glfw-natives-linux.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-glfw-natives-macos.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-glfw-natives-windows.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-glfw.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-natives-linux.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-natives-macos.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-natives-windows.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-openal-natives-linux.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-openal-natives-macos.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-openal-natives-windows.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-openal.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-opengl-natives-linux.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-opengl-natives-macos.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-opengl-natives-windows.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-opengl.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-stb-natives-linux.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-stb-natives-macos.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-stb-natives-windows.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-stb.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl.jar!/" />
+        </CLASSES>
+        <JAVADOC>
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-assimp-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-glfw-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-openal-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-opengl-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-stb-javadoc.jar!/" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-assimp-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-glfw-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-openal-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-opengl-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lwjgl-stb-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
   </component>
 </module>
 
