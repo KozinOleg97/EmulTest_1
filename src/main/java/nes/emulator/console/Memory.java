@@ -35,6 +35,7 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
     private Byte[] mainMemory;
     private Logger log;
     private GenericCartridge mapperMemory;
+    byte[] PPUMemory; // TODO check this
 
     public void init(GenericCartridge c) {
         mapperMemory = c;
@@ -45,6 +46,7 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
         for (int i = 0; i < mainMemory.length; i++) {
             mainMemory[i] = 0;
         }
+        PPUMemory = PPU.INSTANCE.PPUMemory; // TODO check this 2
         log = Logger.getLogger("memory.java");
 
     }
@@ -56,6 +58,8 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 if ((addr & 0x1800) != 0) log.log(Level.FINE, "RAM mirroring at " + Integer.toHexString(addr));
                 return mainMemory[addr & 0x07FF];
             case 0x2000:
+                if ((addr & 0x0FF8) != 0) log.log(Level.FINE, "PPU register mirroring at " + Integer.toHexString(addr));
+                return mainMemory[addr & 0x0007];
             case 0x3000:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:
@@ -85,6 +89,8 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 mainMemory[addr & 0x7FF] = val;
                 return true;
             case 0x2000:
+                if ((addr & 0x0FF8) != 0) log.log(Level.FINE, "PPU register mirroring at " + Integer.toHexString(addr));
+                mainMemory[addr & 0x0007] = val;
             case 0x3000:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:

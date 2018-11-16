@@ -5,7 +5,6 @@ import nes.emulator.display.SimpleGraphics;
 import java.awt.*;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Random;
 
 public enum PPU {
     INSTANCE;
@@ -32,7 +31,7 @@ public enum PPU {
     private Integer XSize = 256;    //256x240
     private Integer YSize = 240;
 
-    private byte[] PPUMemory;
+    public byte[] PPUMemory;
     public byte[] OAM;   //separate address space
 
     private static class OAM2Struct {
@@ -54,7 +53,7 @@ public enum PPU {
     private boolean flagSizeOfSprite = true;
     private boolean flagTableOfSprites = true;
 
-    private Integer activSprite = -1;
+    private Integer activeSprite = -1;
     Palette palette0 = new Palette(Color.GRAY, Color.red, Color.BLUE, Color.ORANGE);
     Palette palette1 = new Palette(Color.BLACK, Color.WHITE, Color.DARK_GRAY, Color.GRAY);
 
@@ -151,7 +150,7 @@ public enum PPU {
 
     private void drawPixel(Integer curPixel, Integer curLine) {
         checkXPosition();
-        if (activSprite != -1) {
+        if (activeSprite != -1) {
             Integer spriteColor = getActiveSpriteNextPixel(curPixel, curLine);
 
             if (spriteColor == 0) {                            // if transparent --> draw background pixel --> return
@@ -180,11 +179,11 @@ public enum PPU {
 
         Integer curSpriteLine = null;
 
-        curSpriteLine = curScreenLine - (OAM2.mem[(activSprite * 4)] & 0xFF);
+        curSpriteLine = curScreenLine - (OAM2.mem[(activeSprite * 4)] & 0xFF);
 
-        Integer spriteX = (curPixelOnScreen - OAM2.mem[(activSprite * 4) + 3] & 0xFF);
+        Integer spriteX = (curPixelOnScreen - OAM2.mem[(activeSprite * 4) + 3] & 0xFF);
 
-        Integer addr = OAM2.mem[(activSprite * 4) + 1] & 0xFF;
+        Integer addr = OAM2.mem[(activeSprite * 4) + 1] & 0xFF;
 
         if (flagSizeOfSprite) {   // if 8x8
             addr *= 16;
@@ -210,7 +209,7 @@ public enum PPU {
         Integer resBit = bit1 + bit2 * 2;
 
         if (spriteX == 7 || curPixelOnScreen >= XSize - 1) {
-            activSprite = -1;
+            activeSprite = -1;
         }
 
         return resBit;
@@ -229,7 +228,7 @@ public enum PPU {
         for (int i = 0; i < OAM2.index; i = i + 4) {
 
             if ((OAM2.xCounters[i / 4] & 0xFF) == 0) {
-                activSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
+                activeSprite = i / 4; ////////////////????????????????? 0 1 2 3 нужны
             }
         }
 
