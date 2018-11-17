@@ -98,40 +98,40 @@ public enum Proc {
         short opAddr = 0;
         Byte operlo = 0;
         switch (addrmode) {
-            case 0:
+            case 0: //ind, x
                 opAddr = (short) (255 & (regX + m.getMemAt(regPC++)));
                 opAddr = (short) m.getMemAtWarpedW(opAddr);
                 operlo = m.getMemAt(opAddr);
                 break;
-            case 1:
+            case 1: //zeropage
                 opAddr = m.getMemAt(regPC++);
                 operlo = m.getMemAt(opAddr);
                 break;
-            case 2:
+            case 2: //immed
                 opAddr = regPC++;
                 operlo = m.getMemAt(opAddr);
                 break;
-            case 3:
+            case 3: //abs
                 opAddr = (short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8);
                 operlo = m.getMemAt(opAddr);
                 regPC += 2;
                 break;
-            case 4:
+            case 4: //(ind), y
                 opAddr = (short) (m.getMemAtWarpedW(m.getMemAt(regPC++).shortValue()) + regY);
                 operlo = m.getMemAt(opAddr);
                 break;
-            case 5:
+            case 5: //(ind, x)
                 byte pc_i = m.getMemAt((short) (regPC - 1)), pc_0 = m.getMemAt(regPC);
                 opAddr = m.getMemAt((short) (255 & (pc_0 + (pc_i == 0x96 || pc_i == 0xB6 ? regY : regX))));
                 regPC++;
                 operlo = m.getMemAt(opAddr);
                 break;
-            case 6:
+            case 6: //abs, y
                 opAddr = (short) (regY + m.getMemAtW((short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8)));
                 regPC += 2;
                 operlo = m.getMemAt(opAddr);
                 break;
-            case 7:
+            case 7: //abs, x
                 pc_i = m.getMemAt((short) (regPC - 1));
                 opAddr = (short) ((pc_i == 0xBE ? regY : regX) + m.getMemAtW((short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8)));
                 regPC += 2;
@@ -177,17 +177,28 @@ public enum Proc {
         // interpret command's code to ascertain addressing mode
         switch (comclass) {
             case 2:
-                //if ((addrmode & 1)==0) break;
+                if ((addrmode & 1)==0 && comcode!=5) break;
+                // 2, 5, 0:immed
+
+                log.log(Level.INFO, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short) (regPC + 1))));
+                opaddr = takeoperaddr(addrmode==0?2:addrmode);
+                oper = m.getMemAt(opaddr);
+                log.log(Level.INFO, String.format("decoded: (%04x)%02x", opaddr, oper));
+                break;
                 //commands either work as expected or halt/nop
             case 0:
                 // сложнааааааа
                 if (comcode == 0 || ((addrmode & 1) == 0 && (comcode < 5 || addrmode != 0))) break;
                 //if (comcode != 0 && ((addrmode & 1) || (comcode >= 5 && !addrmode))) {
+                log.log(Level.INFO, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short) (regPC + 1))));
+                opaddr = takeoperaddr(addrmode==0?2:addrmode);
+                oper = m.getMemAt(opaddr);
+                log.log(Level.INFO, String.format("decoded: (%04x)%02x", opaddr, oper));
+                break;
             case 3:
                 //undocumented
             case 1:
                 log.log(Level.INFO, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short) (regPC + 1))));
-                // TODO: как передавать opaddr как ссылку?????????
                 opaddr = takeoperaddr(addrmode);
                 oper = m.getMemAt(opaddr);
                 log.log(Level.INFO, String.format("decoded: (%04x)%02x", opaddr, oper));
@@ -244,7 +255,7 @@ public enum Proc {
                                     break;
                                 case 2:
                                     stackaddr = (short) (0x100 + (regS & 0xFF));
-                                    P = C | (Z << 1) | (I << 2) | (D << 3) | (1 << 5) | (V << 6) | (N << 7);
+                                    P = C | (Z << 1) | (I << 2) | (D << 3) | (1<<4) | (1 << 5) | (V << 6) | (N << 7);
                                     log.log(Level.INFO, String.format("PHP. P(%02x) => [S](%02x)", P, m.getMemAt(stackaddr)));
                                     m.setMemAt(stackaddr, (byte) (P));
                                     regS--;
