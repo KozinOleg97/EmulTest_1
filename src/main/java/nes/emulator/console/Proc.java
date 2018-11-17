@@ -42,6 +42,10 @@ public enum Proc {
         C = (byte) (c >> 8 & 1);
     }
 
+    private void setBorrow(int c) {
+        C = (byte) (c >> 8 & 1 ^ 1);
+    }
+
 
     private Memory m;
 
@@ -112,12 +116,12 @@ public enum Proc {
                 operlo = m.getMemAt(opAddr);
                 break;
             case 3: //abs
-                opAddr = (short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8);
+                opAddr = m.getMemAtW(regPC);
                 operlo = m.getMemAt(opAddr);
                 regPC += 2;
                 break;
             case 4: //(ind), y
-                opAddr = (short) (m.getMemAtWarpedW(m.getMemAt(regPC++).shortValue()) + regY);
+                opAddr = (short) (m.getMemAtWarpedW((short)(m.getMemAt(regPC++)&0xFF)) + (0xFF&regY));
                 operlo = m.getMemAt(opAddr);
                 break;
             case 5: //(ind, x)
@@ -127,13 +131,13 @@ public enum Proc {
                 operlo = m.getMemAt(opAddr);
                 break;
             case 6: //abs, y
-                opAddr = (short) (regY + m.getMemAtW((short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8)));
+                opAddr = (short) ((0xFF&regY) + m.getMemAtW(regPC) );
                 regPC += 2;
                 operlo = m.getMemAt(opAddr);
                 break;
             case 7: //abs, x
                 pc_i = m.getMemAt((short) (regPC - 1));
-                opAddr = (short) ((pc_i == 0xBE ? regY : regX) + m.getMemAtW((short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8)));
+                opAddr = (short) (((pc_i == 0xBE ? regY : regX)&0xFF) + m.getMemAtW(regPC) );
                 regPC += 2;
                 operlo = m.getMemAt(opAddr);
                 break;
@@ -150,7 +154,7 @@ public enum Proc {
     void CMP(byte a, byte b) {
         int cmp = ((a & 0xff) - (b & 0xff));
         byte cmpb = (byte) cmp;
-        setC(cmp);
+        setBorrow(cmp);
         setZ(cmpb);
         setN(cmpb);
     }
@@ -391,6 +395,7 @@ public enum Proc {
                                     setN(regA);
                                     break;
                             }
+                            break;
                         case 5:
                             switch (addrmode) {
                                 case 0:
@@ -502,7 +507,7 @@ public enum Proc {
                         // = M + (ones complement of N) + C
                         int sbcinterm = ((regA & 0xff) + (~oper & 0xff) + C);
                         // get borrow value
-                        setC(sbcinterm);
+                        setBorrow(sbcinterm);
                         //Overflow occurs if (M^result)&(N^result)&0x80 is nonzero. That is, if the sign of both inputs is different from the sign of the result.
                         V = (byte) (((regA ^ sbcinterm) & (~oper ^ sbcinterm) & 0x80) == 0 ? 0 : 1);
                         regA = (byte) sbcinterm;

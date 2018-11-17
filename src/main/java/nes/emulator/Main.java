@@ -15,7 +15,7 @@ public class Main {
         Memory.INSTANCE.init(c);
 
         Proc.INSTANCE.init();
-        for (int i=0; i<100; i++)
+        for (int i=0; i<13000; i++)
         {
             Proc.INSTANCE.Step();
         }
