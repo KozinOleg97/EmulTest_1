@@ -190,7 +190,7 @@ public enum Proc {
                 // TODO: как передавать opaddr как ссылку?????????
                 opaddr = takeoperaddr(addrmode);
                 oper = m.getMemAt(opaddr);
-                log.log(Level.INFO, String.format("decoded: %02x", oper));
+                log.log(Level.INFO, String.format("decoded: (%04x)%02x", opaddr, oper));
                 break;
         }
         log.log(Level.INFO, "executing ");
@@ -225,7 +225,7 @@ public enum Proc {
                     }
                     if((comcode&1)==0) branchtaken = 1-branchtaken;*/
                     if (branchtaken == 1) regPC = newaddr;
-                    log.log(Level.INFO, String.format("BRANCH. Cond(%02x), TGT", branches[comcode >> 1 & 3], newaddr));
+                    log.log(Level.INFO, String.format("BRANCH. Cond(%02x), TGT(%02x)", branches[comcode >> 1 & 3], newaddr));
                 } else
                     switch (comcode) {
                         case 0:

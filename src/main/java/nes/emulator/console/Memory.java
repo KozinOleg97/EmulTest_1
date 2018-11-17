@@ -59,7 +59,8 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 return mainMemory[addr & 0x07FF];
             case 0x2000:
                 if ((addr & 0x0FF8) != 0) log.log(Level.FINE, "PPU register mirroring at " + Integer.toHexString(addr));
-                return mainMemory[addr & 0x0007];
+                return (byte)0x00;
+                //return PPUMemory[addr & 0x0007];
             case 0x3000:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:
@@ -90,7 +91,8 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 return true;
             case 0x2000:
                 if ((addr & 0x0FF8) != 0) log.log(Level.FINE, "PPU register mirroring at " + Integer.toHexString(addr));
-                mainMemory[addr & 0x0007] = val;
+                PPUMemory[addr & 0x0007] = val;
+                return true;
             case 0x3000:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:
