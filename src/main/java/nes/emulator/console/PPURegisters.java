@@ -35,7 +35,7 @@ public enum PPURegisters {
 
     public void setMemAt(Short addr, Byte val) {
         Integer addrInt = addr & 0x0007;
-        if (checkAccess(addrInt).read) {
+        if (checkAccess(addrInt).write) {
             registers[addrInt].rawValue = val;//TODO
         }
     }
