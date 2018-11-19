@@ -60,7 +60,7 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 return mainMemory[addr & 0x07FF];
             case 0x2000:
                 if ((addr & 0x0FF8) != 0) log.log(Level.FINE, "PPU register mirroring at " + Integer.toHexString(addr));
-                return PPURegisters.INSTANSE.getMemAt(addr);
+                return PPURegisters.INSTANCE.getMemAt(addr);
             case 0x3000:
                 throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:

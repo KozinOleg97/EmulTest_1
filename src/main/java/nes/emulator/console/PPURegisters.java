@@ -1,7 +1,7 @@
 package nes.emulator.console;
 
 public enum PPURegisters {
-    INSTANSE;
+    INSTANCE;
 
     public Register[] registers;
 
@@ -35,7 +35,7 @@ public enum PPURegisters {
 
     public void setMemAt(Short addr, Byte val) {
         Integer addrInt = addr & 0x0007;
-        if (checkAccsess(addrInt).read) {
+        if (checkAccess(addrInt).read) {
             registers[addrInt].rawValue = val;//TODO
         }
     }
@@ -43,14 +43,15 @@ public enum PPURegisters {
     public Byte getMemAt(Short addr) {
         Integer addrInt = addr & 0x0007;
 
-        if (checkAccsess(addrInt).read) {
+        if (checkAccess(addrInt).read) {
             return registers[addrInt].rawValue;//TODO
         }
 
         return 0;
     }
 
-    private accessRights checkAccsess(Integer addr) {
+
+    private accessRights checkAccess(Integer addr) {
         switch (addr) {
             case 0:
                 return new accessRights(true, false);
