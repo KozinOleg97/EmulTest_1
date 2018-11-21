@@ -37,6 +37,7 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
     private GenericCartridge mapperMemory;
     byte[] PPUMemory; // TODO check this
 
+
     public void init(GenericCartridge c) {
         mapperMemory = c;
     }
@@ -58,9 +59,10 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 if ((addr & 0x1800) != 0) log.log(Level.FINE, "RAM mirroring at " + Integer.toHexString(addr));
                 return mainMemory[addr & 0x07FF];
             case 0x2000:
-            case 0x3000:
                 if ((addr & 0x0FF8) != 0) log.log(Level.FINE, "PPU register mirroring at " + Integer.toHexString(addr));
-                return PPUMemory[addr & 0x0007];
+                return PPURegisters.INSTANCE.getMemAt(addr);
+            case 0x3000:
+                throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:
                 return mapperMemory.getCPUMemAt(addr);
         }
