@@ -148,6 +148,28 @@ public enum PPU {
         }
     }
 
+    Integer x=0, y=0;
+    Integer oddFramePixel=0;
+
+
+    public void Ketchup(long cycles)
+    {
+        for (int i=0; i<cycles; i++)
+        {
+            if(x<256 && y>0 && y<241)
+                drawPixel(x, y);
+            else if(x>=340)
+            {
+                x=0;
+                if(y++>=261+oddFramePixel)
+                {
+                    y=0;
+                    oddFramePixel = -1 - oddFramePixel;
+                }
+            } else x++;
+        }
+    }
+
     private void drawPixel(Integer curPixel, Integer curLine) {
         checkXPosition();
         if (activeSprite != -1) {

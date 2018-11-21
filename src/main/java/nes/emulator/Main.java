@@ -2,6 +2,7 @@ package nes.emulator;
 
 import nes.emulator.cartridge.GenericCartridge;
 import nes.emulator.console.Memory;
+import nes.emulator.console.PPU;
 import nes.emulator.console.Proc;
 import nes.emulator.display.SimpleGraphics;
 
@@ -15,12 +16,17 @@ public class Main {
         Memory.INSTANCE.init(c);
 
         Proc.INSTANCE.init();
+
+        SimpleGraphics.INSTANCE.init();
+
         for (int i=0; i<13000; i++)
         {
+            long prestep = Proc.INSTANCE.getPPUTickCount();
             Proc.INSTANCE.Step();
+            long poststep = Proc.INSTANCE.getPPUTickCount();
+            PPU.INSTANCE.Ketchup(poststep-prestep);
         }
 
-        //SimpleGraphics.INSTANCE.init();
     }
 }
 

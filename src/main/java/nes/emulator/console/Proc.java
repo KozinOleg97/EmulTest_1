@@ -53,7 +53,7 @@ public enum Proc {
 
     public long getEmulTickCount()
     {
-        return RESETtick+CPUticks*3;
+        return RESETtick+CPUticks*12;
     }
 
     public long getCPUTickCount()
@@ -61,9 +61,15 @@ public enum Proc {
         return CPUticks;
     }
 
+    public long getPPUTickCount()
+    {
+        return RESETtick+CPUticks*3;
+    }
+
     public void InitiateReset()
     {
         RESETtick = getEmulTickCount();
+        CPUticks = 0;
         regS-=3;
         I=1;
         regPC=m.getMemAtW((short) 0xFFFC);
