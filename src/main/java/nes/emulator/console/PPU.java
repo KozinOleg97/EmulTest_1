@@ -158,7 +158,7 @@ public enum PPU {
         {
             if(x<256 && y>0 && y<241)
                 drawPixel(x, y);
-            else if(x>=340)
+            if(x>=340)
             {
                 x=0;
                 if(y++>=261+oddFramePixel)
