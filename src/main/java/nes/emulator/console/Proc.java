@@ -597,6 +597,7 @@ public enum Proc {
                             case 5:
                             case 7:
                                 log.log(Level.INFO, String.format("ASL. M: %02x", oper));
+                                m.setMemAt(opaddr, oper);
                                 int intermediate = oper << 1;
                                 setC(intermediate);
                                 m.setMemAt(opaddr, (byte)intermediate);
@@ -649,6 +650,7 @@ public enum Proc {
                             case 5:
                             case 7:
                                 log.log(Level.INFO, String.format("LSR. M: %02x", oper));
+                                m.setMemAt(opaddr, oper);
                                 C = (byte)(oper&1);
                                 oper = (byte) ((oper & 0xff) >> 1);
                                 m.setMemAt(opaddr, oper);
@@ -672,6 +674,7 @@ public enum Proc {
                             case 5:
                             case 7:
                                 log.log(Level.INFO, String.format("ROR. M: %02x", oper));
+                                m.setMemAt(opaddr, oper);
                                 // to roll right: shift right  then mask the lowest 7 bits due to sign-extension
                                 // shift left 7 normally
                                 // operator precedence: <</>> > & > |
@@ -741,6 +744,7 @@ public enum Proc {
                         break;
                     case 6:
                         if ((addrmode & 1) != 0) {
+                            m.setMemAt(opaddr, oper);
                             m.setMemAt(opaddr, (byte) (oper - 1));
                             oper = m.getMemAt(opaddr);
                             log.log(Level.INFO, String.format("DEC. result: %02x", m.getMemAt(opaddr)));
@@ -756,6 +760,7 @@ public enum Proc {
                         break;
                     case 7:
                         if ((addrmode & 1) != 0) {
+                            m.setMemAt(opaddr, oper);
                             m.setMemAt(opaddr, (byte) (oper + 1));
                             oper = m.getMemAt(opaddr);
                             log.log(Level.INFO, String.format("INC. result: %02x", oper));
