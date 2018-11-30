@@ -5,7 +5,11 @@ package nes.emulator.console;
 //http://nparker.llx.com/a2/opcodes.html
 //https://www.atariarchives.org/alp/appendix_1.php
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 public enum Proc {
@@ -83,6 +87,19 @@ public enum Proc {
         regPC = m.getMemAtW((short) 0xFFFC);
         //m=mem;
 
+        try
+        {
+            LogManager.getLogManager().readConfiguration(new ByteArrayInputStream(("handlers = java.util.logging.FileHandler\n" +
+                    "java.util.logging.FileHandler.level =ALL\n" +
+                    "java.util.logging.FileHandler.formatter =java.util.logging.SimpleFormatter\n" +
+                    "java.util.logging.SimpleFormatter.format=%4$s: %5$s%n\n" +
+                    "java.util.logging.FileHandler.limit = 100000000\n" +
+                    "java.util.logging.FileHandler.pattern   = полено.txt").getBytes(StandardCharsets.UTF_8)));
+        } catch (IOException e)
+        {
+            log = null;
+            return;
+        }
         log = Logger.getLogger("proc.java");
         log.setLevel(Level.ALL);
     }
@@ -199,7 +216,7 @@ public enum Proc {
         //char* opcodes = "\xA9\xFE\xAA\xE8\x95\x01\xA4\x00";
 
         byte command = m.getMemAt(regPC++);
-        log.log(Level.INFO, String.format("command: %02x\n", command));
+        log.log(Level.INFO, String.format("command: %02x", command));
 
         byte oper = 0;
         Short opaddr = 0;
@@ -750,7 +767,7 @@ public enum Proc {
                         break;
                 }
         }
-        log.log(Level.INFO, "\n");
-        log.log(Level.INFO, String.format("terminated. A: %02x, X: %02x, Y: %02x, PC: %04x, S: %02x", regA, regX, regY, regPC, regS));
+        log.log(Level.INFO, String.format("terminated. A: %02x, X: %02x, Y: %02x, PC: %04x, S: %02x\n", regA, regX, regY, regPC, regS));
+        //log.log(Level.INFO, "\n");
     }
 }
