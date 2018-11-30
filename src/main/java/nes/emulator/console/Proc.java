@@ -211,9 +211,40 @@ public enum Proc {
         setN(cmpb);
     }
 
+    int DMARemaining = 0;
+    short DMAHigh = (short)0xFF00;
+    final static short PPU_OAM_DATA_ADDRESS = (short)0x2004;
+    final static short OAM_DMA_ADDRESS = (short)0x4014;
+
+    public void SetupDMA(byte dmahigh)
+    {
+        DMARemaining = 0x100;
+        DMAHigh = (short)(dmahigh<<8);
+        CPUticks++; // +1 если инструкция заканчивается на нечетном такте цпу
+    }
+
+    void DMA()
+    {
+        m.setMemAt(PPU_OAM_DATA_ADDRESS, m.getMemAt(DMAHigh++));
+        DMARemaining--;
+        CPUticks+=2;
+    }
+
+    void ComplainAboutDMA()
+    {
+        log.log(Level.SEVERE, "RRW instruction tried to write 0x4014 twice. Only the second write will proceed");
+    }
+
+    boolean getDMARunning()
+    {
+        return DMARemaining!=0;
+    }
+
     public void Step() {
         // LDA FF, TAX, INX, STA 1,X, LDY #0
         //char* opcodes = "\xA9\xFE\xAA\xE8\x95\x01\xA4\x00";
+
+        if(getDMARunning()) { DMA(); return; }
 
         byte command = m.getMemAt(regPC++);
         log.log(Level.INFO, String.format("command: %02x", command));
@@ -603,6 +634,7 @@ public enum Proc {
                                 m.setMemAt(opaddr, (byte)intermediate);
                                 setZ(oper);
                                 setN(oper);
+                                if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
                                 CPUticks+=2+pageCrossed;
                                 break;
                             case 2:
@@ -631,6 +663,7 @@ public enum Proc {
                                 m.setMemAt(opaddr, oper);
                                 setZ(oper);
                                 setN(oper);
+                                if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
                                 CPUticks+=2+pageCrossed;
                                 break;
                             case 2:
@@ -656,6 +689,7 @@ public enum Proc {
                                 m.setMemAt(opaddr, oper);
                                 setZ(oper);
                                 setN(oper);
+                                if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
                                 CPUticks+=2+pageCrossed;
                                 break;
                             case 2:
@@ -684,6 +718,7 @@ public enum Proc {
                                 m.setMemAt(opaddr, oper);
                                 setZ(oper);
                                 setN(oper);
+                                if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
                                 CPUticks+=2+pageCrossed;
                                 break;
                             case 2:
@@ -750,6 +785,7 @@ public enum Proc {
                             log.log(Level.INFO, String.format("DEC. result: %02x", m.getMemAt(opaddr)));
                             setZ(oper);
                             setN(oper);
+                            if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
                             CPUticks+=2+pageCrossed;
                         } else if (addrmode == 2) {
                             regX--;
@@ -766,6 +802,7 @@ public enum Proc {
                             log.log(Level.INFO, String.format("INC. result: %02x", oper));
                             setZ(oper);
                             setN(oper);
+                            if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
                             CPUticks+=2+pageCrossed;
                         } else
                             log.log(Level.INFO, "NOP");

@@ -94,7 +94,12 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 PPUMemory[addr & 0x0007] = val;
                 return true;
             default:
-                return mapperMemory.setCPUMemAt(addr, val);
+                final short OAM_DMA_ADDRESS = (short)0x4014;
+                final short APU_ADDRESS_HIGH = (short)0x401F;
+                if(addr==OAM_DMA_ADDRESS) { Proc.INSTANCE.SetupDMA(val); return true; }
+                else if(addr<=APU_ADDRESS_HIGH) return false;
+                else
+                    return mapperMemory.setCPUMemAt(addr, val);
         }
     }
 
