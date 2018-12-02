@@ -93,13 +93,13 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 if ((addr & 0x0FF8) != 0) log.log(Level.FINE, "PPU register mirroring at " + Integer.toHexString(addr));
                 PPUMemory[addr & 0x0007] = val;
                 return true;
-            default:
+            case 0x4000:
                 final short OAM_DMA_ADDRESS = (short)0x4014;
                 final short APU_ADDRESS_HIGH = (short)0x401F;
                 if(addr==OAM_DMA_ADDRESS) { Proc.INSTANCE.SetupDMA(val); return true; }
                 else if(addr<=APU_ADDRESS_HIGH) return false;
-                else
-                    return mapperMemory.setCPUMemAt(addr, val);
+            default:
+                return mapperMemory.setCPUMemAt(addr, val);
         }
     }
 
