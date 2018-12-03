@@ -172,22 +172,14 @@ public enum PPU {
 
     private void drawPixel(Integer curPixel, Integer curLine) {
         checkXPosition();
-        if (activeSprite != -1) {
-            Integer spriteColor = getActiveSpriteNextPixel(curPixel, curLine);
-
-            if (spriteColor == 0) {                            // if transparent --> draw background pixel --> return
-                Integer bgColor = getBackgroundPixel(curPixel, curLine);
-                SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, bgColor, palette1);
-
-                decrementXPosition();
-                return;
-            }
-
-            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, spriteColor, palette0);
-        } else {                                            // if no sprite --> draw background pixel
-            Integer bgColor = getBackgroundPixel(curPixel, curLine);
-            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, bgColor, palette1);
+        Integer color = 0; Palette pal;
+        if (activeSprite != -1 && (color = getActiveSpriteNextPixel(curPixel, curLine)) !=0) {
+            pal = palette1;
+        } else {
+            color = getBackgroundPixel(curPixel, curLine);
+            pal = palette0;
         }
+        SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, color, pal);
         decrementXPosition();
     }
 
@@ -201,6 +193,8 @@ public enum PPU {
 
     private Integer getActiveSpriteNextPixel(Integer curPixelOnScreen, Integer curScreenLine) {
 
+        // дебильно что getActiveSpriteNextPixel имеет побочки в виде установки activeSprite
+        // вызывал функцию второй раз за пиксель, все крешилось
         Integer curSpriteLine = null;
 
         curSpriteLine = curScreenLine - (OAM2.mem[(activeSprite * 4)] & 0xFF);
