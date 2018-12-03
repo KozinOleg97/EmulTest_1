@@ -172,14 +172,10 @@ public enum PPU {
 
     private void drawPixel(Integer curPixel, Integer curLine) {
         checkXPosition();
-        Integer color = 0; Palette pal;
-        if (activeSprite != -1 && (color = getActiveSpriteNextPixel(curPixel, curLine)) !=0) {
-            pal = palette1;
-        } else {
+        Integer color = 0; Boolean pal;
+        if (!(pal = activeSprite != -1 && (color = getActiveSpriteNextPixel(curPixel, curLine)) !=0))
             color = getBackgroundPixel(curPixel, curLine);
-            pal = palette0;
-        }
-        SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, color, pal);
+        SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, color, pal?palette1:palette0);
         decrementXPosition();
     }
 
