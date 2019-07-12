@@ -5,7 +5,11 @@ package nes.emulator.console;
 //http://nparker.llx.com/a2/opcodes.html
 //https://www.atariarchives.org/alp/appendix_1.php
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 public enum Proc {
@@ -29,6 +33,10 @@ public enum Proc {
     private byte V; //:1; // oVerflow
     private byte N; //:1; // negative(?)
 
+    private long RESETtick;
+    private long CPUticks;
+
+    private int pageCrossed = 0;
 
     private void setZ(byte z) {
         Z = (byte) (z == 0 ? 1 : 0);
@@ -42,14 +50,56 @@ public enum Proc {
         C = (byte) (c >> 8 & 1);
     }
 
+    private void setBorrow(int c) {
+        C = (byte) (c >> 8 & 1 ^ 1);
+    }
+
 
     private Memory m;
+
+    public long getEmulTickCount()
+    {
+        return RESETtick+CPUticks*12;
+    }
+
+    public long getCPUTickCount()
+    {
+        return CPUticks;
+    }
+
+    public long getPPUTickCount()
+    {
+        return RESETtick+CPUticks*3;
+    }
+
+    public void InitiateReset()
+    {
+        RESETtick = getEmulTickCount();
+        CPUticks = 0;
+        regS-=3;
+        I=1;
+        regPC=m.getMemAtW((short) 0xFFFC);
+        //m.setMemAt(0x4015, 0); // APU
+    }
 
     public void init() {
         m = Memory.INSTANCE;
         regPC = m.getMemAtW((short) 0xFFFC);
         //m=mem;
 
+        try
+        {
+            LogManager.getLogManager().readConfiguration(new ByteArrayInputStream(("handlers = java.util.logging.FileHandler\n" +
+                    "java.util.logging.FileHandler.level =ALL\n" +
+                    "java.util.logging.FileHandler.formatter =java.util.logging.SimpleFormatter\n" +
+                    "java.util.logging.SimpleFormatter.format=%4$s: %5$s%n\n" +
+                    "java.util.logging.FileHandler.limit = 100000000\n" +
+                    "java.util.logging.FileHandler.pattern   = полено.txt").getBytes(StandardCharsets.UTF_8)));
+        } catch (IOException e)
+        {
+            log = null;
+            return;
+        }
         log = Logger.getLogger("proc.java");
         log.setLevel(Level.ALL);
     }
@@ -96,46 +146,52 @@ public enum Proc {
 	*/
 
         short opAddr = 0;
-        Byte operlo = 0;
+        short opAddr_i = 0;
+        pageCrossed = 0;
         switch (addrmode) {
-            case 0:
+            case 0: // =(ind, x)
                 opAddr = (short) (255 & (regX + m.getMemAt(regPC++)));
                 opAddr = (short) m.getMemAtWarpedW(opAddr);
-                operlo = m.getMemAt(opAddr);
+                CPUticks+=4;
                 break;
-            case 1:
+            case 1: //zeropage
                 opAddr = m.getMemAt(regPC++);
-                operlo = m.getMemAt(opAddr);
+                CPUticks++;
                 break;
-            case 2:
+            case 2: //immed
                 opAddr = regPC++;
-                operlo = m.getMemAt(opAddr);
                 break;
-            case 3:
-                opAddr = (short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8);
-                operlo = m.getMemAt(opAddr);
+            case 3: //abs
+                opAddr = m.getMemAtW(regPC);
                 regPC += 2;
+                CPUticks+=2;
                 break;
-            case 4:
-                opAddr = (short) (m.getMemAtWarpedW(m.getMemAt(regPC++).shortValue()) + regY);
-                operlo = m.getMemAt(opAddr);
+            case 4: //(ind), y
+                opAddr_i = m.getMemAtWarpedW((short)(m.getMemAt(regPC++)&0xFF));
+                opAddr = (short) (opAddr_i + (0xFF&regY));
+                if((opAddr&0xFF00)!=(opAddr_i&0xFF00)) CPUticks++; else pageCrossed=1;
+                CPUticks+=3;
                 break;
-            case 5:
+            case 5: //zp, x
                 byte pc_i = m.getMemAt((short) (regPC - 1)), pc_0 = m.getMemAt(regPC);
                 opAddr = m.getMemAt((short) (255 & (pc_0 + (pc_i == 0x96 || pc_i == 0xB6 ? regY : regX))));
                 regPC++;
-                operlo = m.getMemAt(opAddr);
+                CPUticks+=2;
                 break;
-            case 6:
-                opAddr = (short) (regY + m.getMemAtW((short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8)));
+            case 6: //abs, y
+                opAddr_i = m.getMemAtW(regPC);
+                opAddr = (short) ((0xFF&regY) + opAddr_i );
+                if((opAddr&0xFF00)!=(opAddr_i&0xFF00)) CPUticks++; else pageCrossed=1;
                 regPC += 2;
-                operlo = m.getMemAt(opAddr);
+                CPUticks+=2;
                 break;
-            case 7:
+            case 7: //abs, x
+                opAddr_i = m.getMemAtW(regPC);
                 pc_i = m.getMemAt((short) (regPC - 1));
-                opAddr = (short) ((pc_i == 0xBE ? regY : regX) + m.getMemAtW((short) (m.getMemAt(regPC) | m.getMemAt((short) (regPC + 1)) << 8)));
+                opAddr = (short) (((pc_i == 0xBE ? regY : regX)&0xFF) + opAddr_i );
+                if((opAddr&0xFF00)!=(opAddr_i&0xFF00)) CPUticks++; else pageCrossed=1;
                 regPC += 2;
-                operlo = m.getMemAt(opAddr);
+                CPUticks+=2;
                 break;
         }
         return opAddr;
@@ -150,17 +206,48 @@ public enum Proc {
     void CMP(byte a, byte b) {
         int cmp = ((a & 0xff) - (b & 0xff));
         byte cmpb = (byte) cmp;
-        setC(cmp);
+        setBorrow(cmp);
         setZ(cmpb);
         setN(cmpb);
+    }
+
+    int DMARemaining = 0;
+    short DMAHigh = (short)0xFF00;
+    final static short PPU_OAM_DATA_ADDRESS = (short)0x2004;
+    final static short OAM_DMA_ADDRESS = (short)0x4014;
+
+    public void SetupDMA(byte dmahigh)
+    {
+        DMARemaining = 0x100;
+        DMAHigh = (short)(dmahigh<<8);
+        CPUticks++; // +1 если инструкция заканчивается на нечетном такте цпу
+    }
+
+    void DMA()
+    {
+        m.setMemAt(PPU_OAM_DATA_ADDRESS, m.getMemAt(DMAHigh++));
+        DMARemaining--;
+        CPUticks+=2;
+    }
+
+    void ComplainAboutDMA()
+    {
+        log.log(Level.SEVERE, "RRW instruction tried to write 0x4014 twice. Only the second write will proceed");
+    }
+
+    boolean getDMARunning()
+    {
+        return DMARemaining!=0;
     }
 
     public void Step() {
         // LDA FF, TAX, INX, STA 1,X, LDY #0
         //char* opcodes = "\xA9\xFE\xAA\xE8\x95\x01\xA4\x00";
 
+        if(getDMARunning()) { DMA(); return; }
+
         byte command = m.getMemAt(regPC++);
-        log.log(Level.INFO, String.format("command: %02x\n", command));
+        log.log(Level.INFO, String.format("command: %02x", command));
 
         byte oper = 0;
         Short opaddr = 0;
@@ -174,23 +261,36 @@ public enum Proc {
         int comcode = (command >> 5) & 7;
         int comclass = command & 3;
 
+        CPUticks +=2;
+
         // interpret command's code to ascertain addressing mode
         switch (comclass) {
             case 2:
-                //if ((addrmode & 1)==0) break;
+                if ((addrmode & 1)==0 && comcode!=5) break;
+                // 2, 5, 0:immed
+
+                log.log(Level.INFO, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short) (regPC + 1))));
+                opaddr = takeoperaddr(addrmode==0?2:addrmode);
+                oper = m.getMemAt(opaddr);
+                log.log(Level.INFO, String.format("decoded: (%04x)%02x", opaddr, oper));
+                break;
                 //commands either work as expected or halt/nop
             case 0:
                 // сложнааааааа
                 if (comcode == 0 || ((addrmode & 1) == 0 && (comcode < 5 || addrmode != 0))) break;
                 //if (comcode != 0 && ((addrmode & 1) || (comcode >= 5 && !addrmode))) {
+                log.log(Level.INFO, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short) (regPC + 1))));
+                opaddr = takeoperaddr(addrmode==0?2:addrmode);
+                oper = m.getMemAt(opaddr);
+                log.log(Level.INFO, String.format("decoded: (%04x)%02x", opaddr, oper));
+                break;
             case 3:
                 //undocumented
             case 1:
                 log.log(Level.INFO, String.format("operand: %02x(+second byte %02x) ", m.getMemAt(regPC), m.getMemAt((short) (regPC + 1))));
-                // TODO: как передавать opaddr как ссылку?????????
                 opaddr = takeoperaddr(addrmode);
                 oper = m.getMemAt(opaddr);
-                log.log(Level.INFO, String.format("decoded: %02x", oper));
+                log.log(Level.INFO, String.format("decoded: (%04x)%02x", opaddr, oper));
                 break;
         }
         log.log(Level.INFO, "executing ");
@@ -224,8 +324,14 @@ public enum Proc {
                             break;
                     }
                     if((comcode&1)==0) branchtaken = 1-branchtaken;*/
-                    if (branchtaken == 1) regPC = newaddr;
-                    log.log(Level.INFO, String.format("BRANCH. Cond(%02x), TGT", branches[comcode >> 1 & 3], newaddr));
+                    if (branchtaken == 1)
+                    {
+                        CPUticks++;
+                        // If branch occurs to different page, an additional instruction fetch is made
+                        if(((newaddr^regPC)&0xFF00)!=0) CPUticks++;
+                        regPC = newaddr;
+                    }
+                    log.log(Level.INFO, String.format("BRANCH. Cond(%02x), TGT(%02x)", branches[comcode >> 1 & 3], newaddr));
                 } else
                     switch (comcode) {
                         case 0:
@@ -241,13 +347,15 @@ public enum Proc {
                                     I = 1;
                                     log.log(Level.INFO, String.format("BRK. RET(%02x)", regPC));
                                     regPC = m.getMemAtW((short) 0xFFFE);
+                                    CPUticks+=5;
                                     break;
                                 case 2:
                                     stackaddr = (short) (0x100 + (regS & 0xFF));
-                                    P = C | (Z << 1) | (I << 2) | (D << 3) | (1 << 5) | (V << 6) | (N << 7);
+                                    P = C | (Z << 1) | (I << 2) | (D << 3) | (1<<4) | (1 << 5) | (V << 6) | (N << 7);
                                     log.log(Level.INFO, String.format("PHP. P(%02x) => [S](%02x)", P, m.getMemAt(stackaddr)));
                                     m.setMemAt(stackaddr, (byte) (P));
                                     regS--;
+                                    CPUticks++;
                                     break;
                                 case 6:
                                     log.log(Level.INFO, String.format("CLC. C(%02x)", C));
@@ -265,6 +373,7 @@ public enum Proc {
                                     regPC = jsraddr;
                                     regS -= 2;
                                     log.log(Level.INFO, String.format("JSR. TGT(%02x)", regPC));
+                                    CPUticks+=4;
                                     break;
                                 case 1:
                                 case 3:
@@ -287,6 +396,7 @@ public enum Proc {
                                     D = (byte) (NP >> 3 & 1);
                                     V = (byte) (NP >> 6 & 1);
                                     N = (byte) (NP >> 7 & 1);
+                                    CPUticks+=2;
                                     break;
                                 case 6:
                                     log.log(Level.INFO, String.format("SEC. C(%02x)", C));
@@ -309,6 +419,7 @@ public enum Proc {
                                     stackaddr++;
                                     regPC = m.getMemAtW(stackaddr);
                                     regS += 3;
+                                    CPUticks+=4;
                                     log.log(Level.INFO, String.format("RTI. TGT(%02x)", regPC));
                                     break;
                                 case 2:
@@ -316,9 +427,11 @@ public enum Proc {
                                     log.log(Level.INFO, String.format("PHA. A(%02x) => [S](%02x)", regA, m.getMemAt(stackaddr)));
                                     m.setMemAt(stackaddr, regA);
                                     regS--;
+                                    CPUticks++;
                                     break;
                                 case 3:
                                     short jumptgt = m.getMemAtW(regPC);
+                                    CPUticks++;
                                     log.log(Level.INFO, String.format("JMP tgt: %04x", jumptgt));
                                     regPC = jumptgt;
                                     break;
@@ -336,6 +449,7 @@ public enum Proc {
                                     regPC = m.getMemAtW(stackaddr);
                                     regPC++;
                                     regS++;
+                                    CPUticks+=4;
                                     log.log(Level.INFO, String.format("RTS. TGT(%02x)", regPC));
                                     break;
                                 case 2:
@@ -346,10 +460,12 @@ public enum Proc {
                                     regA = NA;
                                     setZ(regA);
                                     setN(regA);
+                                    CPUticks+=2;
                                     break;
                                 case 3:
                                     short jumptgta = m.getMemAtW(regPC);
                                     short jumptgt = m.getMemAtWarpedW(jumptgta);
+                                    CPUticks+=3;
                                     log.log(Level.INFO, String.format("JMP tgt: %04x", jumptgt));
                                     regPC = jumptgt;
                                     break;
@@ -380,6 +496,7 @@ public enum Proc {
                                     setN(regA);
                                     break;
                             }
+                            break;
                         case 5:
                             switch (addrmode) {
                                 case 0:
@@ -471,6 +588,7 @@ public enum Proc {
                     case 4:
                         log.log(Level.INFO, String.format("STA. A(%02x) => M(%02x)", regA, oper));
                         m.setMemAt(opaddr, regA);
+                        CPUticks+=pageCrossed;
                         break;
                     case 5:
                         regA = (byte) oper;
@@ -491,7 +609,7 @@ public enum Proc {
                         // = M + (ones complement of N) + C
                         int sbcinterm = ((regA & 0xff) + (~oper & 0xff) + C);
                         // get borrow value
-                        setC(sbcinterm);
+                        setBorrow(sbcinterm);
                         //Overflow occurs if (M^result)&(N^result)&0x80 is nonzero. That is, if the sign of both inputs is different from the sign of the result.
                         V = (byte) (((regA ^ sbcinterm) & (~oper ^ sbcinterm) & 0x80) == 0 ? 0 : 1);
                         regA = (byte) sbcinterm;
@@ -510,13 +628,20 @@ public enum Proc {
                             case 5:
                             case 7:
                                 log.log(Level.INFO, String.format("ASL. M: %02x", oper));
-                                m.setMemAt(opaddr, oper <<= 1);
+                                m.setMemAt(opaddr, oper);
+                                int intermediate = oper << 1;
+                                setC(intermediate);
+                                m.setMemAt(opaddr, (byte)intermediate);
                                 setZ(oper);
                                 setN(oper);
+                                if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
+                                CPUticks+=2+pageCrossed;
                                 break;
                             case 2:
                                 log.log(Level.INFO, String.format("ASL. A: %02x", regA));
-                                regA <<= 1;
+                                intermediate = regA << 1;
+                                setC(intermediate);
+                                regA = (byte)intermediate;
                                 setZ(regA);
                                 setN(regA);
                                 break;
@@ -532,14 +657,20 @@ public enum Proc {
                                 // to roll left: shift left normally
                                 // shift right 7 then mask the lowest bit (java sign-extends bytes into ints. for negative numbers this means all leftmost bits become 1's)
                                 // operator precedence: <</>> > & > |
-                                oper = (byte) (oper << 1 | oper >> 7 & 0x1);
+                                int intermediate = oper << 1 | C;
+                                setC(intermediate);
+                                oper = (byte) (intermediate);
                                 m.setMemAt(opaddr, oper);
                                 setZ(oper);
                                 setN(oper);
+                                if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
+                                CPUticks+=2+pageCrossed;
                                 break;
                             case 2:
                                 log.log(Level.INFO, String.format("ROL. A: %02x", regA));
-                                regA = (byte) (regA << 1 | regA >> 7 & 0x1);
+                                intermediate = regA << 1 | C;
+                                setC(intermediate);
+                                regA = (byte) (intermediate);
                                 setZ(regA);
                                 setN(regA);
                                 break;
@@ -551,14 +682,19 @@ public enum Proc {
                             case 3:
                             case 5:
                             case 7:
-                                log.log(Level.INFO, String.format("ASR. M: %02x", oper));
+                                log.log(Level.INFO, String.format("LSR. M: %02x", oper));
+                                m.setMemAt(opaddr, oper);
+                                C = (byte)(oper&1);
                                 oper = (byte) ((oper & 0xff) >> 1);
                                 m.setMemAt(opaddr, oper);
                                 setZ(oper);
                                 setN(oper);
+                                if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
+                                CPUticks+=2+pageCrossed;
                                 break;
                             case 2:
-                                log.log(Level.INFO, String.format("ASR. A: %02x", regA));
+                                log.log(Level.INFO, String.format("LSR. A: %02x", regA));
+                                C = (byte)(regA&1);
                                 regA = (byte) ((regA & 0xff) >> 1);
                                 setZ(regA);
                                 setN(regA);
@@ -572,17 +708,24 @@ public enum Proc {
                             case 5:
                             case 7:
                                 log.log(Level.INFO, String.format("ROR. M: %02x", oper));
+                                m.setMemAt(opaddr, oper);
                                 // to roll right: shift right  then mask the lowest 7 bits due to sign-extension
                                 // shift left 7 normally
                                 // operator precedence: <</>> > & > |
-                                oper = (byte) (oper >> 1 & 0x7F | oper << 7);
+                                int intermediate = oper >> 1 & 0x7F | C << 7;
+                                C = (byte)(oper&1);
+                                oper = (byte) (intermediate);
                                 m.setMemAt(opaddr, oper);
                                 setZ(oper);
                                 setN(oper);
+                                if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
+                                CPUticks+=2+pageCrossed;
                                 break;
                             case 2:
                                 log.log(Level.INFO, String.format("ROR. A: %02x", regA));
-                                regA = (byte) (regA >> 1 & 0x7F | regA << 7);
+                                intermediate = regA >> 1 & 0x7F | C << 7;
+                                C = (byte)(regA&1);
+                                regA = (byte) (intermediate);
                                 setZ(regA);
                                 setN(regA);
                                 break;
@@ -636,11 +779,14 @@ public enum Proc {
                         break;
                     case 6:
                         if ((addrmode & 1) != 0) {
+                            m.setMemAt(opaddr, oper);
                             m.setMemAt(opaddr, (byte) (oper - 1));
                             oper = m.getMemAt(opaddr);
                             log.log(Level.INFO, String.format("DEC. result: %02x", m.getMemAt(opaddr)));
                             setZ(oper);
                             setN(oper);
+                            if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
+                            CPUticks+=2+pageCrossed;
                         } else if (addrmode == 2) {
                             regX--;
                             log.log(Level.INFO, String.format("DEX. result: %02x", regY));
@@ -650,17 +796,20 @@ public enum Proc {
                         break;
                     case 7:
                         if ((addrmode & 1) != 0) {
+                            m.setMemAt(opaddr, oper);
                             m.setMemAt(opaddr, (byte) (oper + 1));
                             oper = m.getMemAt(opaddr);
                             log.log(Level.INFO, String.format("INC. result: %02x", oper));
                             setZ(oper);
                             setN(oper);
+                            if(opaddr==OAM_DMA_ADDRESS) ComplainAboutDMA();
+                            CPUticks+=2+pageCrossed;
                         } else
                             log.log(Level.INFO, "NOP");
                         break;
                 }
         }
-        log.log(Level.INFO, "\n");
-        log.log(Level.INFO, String.format("terminated. A: %02x, X: %02x, Y: %02x, PC: %04x, S: %02x", regA, regX, regY, regPC, regS));
+        log.log(Level.INFO, String.format("terminated. A: %02x, X: %02x, Y: %02x, PC: %04x, S: %02x\n", regA, regX, regY, regPC, regS));
+        //log.log(Level.INFO, "\n");
     }
 }

@@ -148,24 +148,34 @@ public enum PPU {
         }
     }
 
+    Integer x=0, y=0;
+    Integer oddFramePixel=0;
+
+
+    public void Ketchup(long cycles)
+    {
+        for (int i=0; i<cycles; i++)
+        {
+            if(x<256 && y>0 && y<241)
+                drawPixel(x, y);
+            if(x>=340)
+            {
+                x=0;
+                if(y++>=261+oddFramePixel)
+                {
+                    y=0;
+                    oddFramePixel = -1 - oddFramePixel;
+                }
+            } else x++;
+        }
+    }
+
     private void drawPixel(Integer curPixel, Integer curLine) {
         checkXPosition();
-        if (activeSprite != -1) {
-            Integer spriteColor = getActiveSpriteNextPixel(curPixel, curLine);
-
-            if (spriteColor == 0) {                            // if transparent --> draw background pixel --> return
-                Integer bgColor = getBackgroundPixel(curPixel, curLine);
-                SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, bgColor, palette1);
-
-                decrementXPosition();
-                return;
-            }
-
-            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, spriteColor, palette0);
-        } else {                                            // if no sprite --> draw background pixel
-            Integer bgColor = getBackgroundPixel(curPixel, curLine);
-            SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, bgColor, palette1);
-        }
+        Integer color = 0; Boolean pal;
+        if (!(pal = activeSprite != -1 && (color = getActiveSpriteNextPixel(curPixel, curLine)) !=0))
+            color = getBackgroundPixel(curPixel, curLine);
+        SimpleGraphics.INSTANCE.addPixel(curPixel, curLine, color, pal?palette1:palette0);
         decrementXPosition();
     }
 
@@ -179,6 +189,8 @@ public enum PPU {
 
     private Integer getActiveSpriteNextPixel(Integer curPixelOnScreen, Integer curScreenLine) {
 
+        // дебильно что getActiveSpriteNextPixel имеет побочки в виде установки activeSprite
+        // вызывал функцию второй раз за пиксель, все крешилось
         Integer curSpriteLine = null;
 
         curSpriteLine = curScreenLine - (OAM2.mem[(activeSprite * 4)] & 0xFF);

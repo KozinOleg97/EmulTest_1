@@ -59,18 +59,17 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 if ((addr & 0x1800) != 0) log.log(Level.FINE, "RAM mirroring at " + Integer.toHexString(addr));
                 return mainMemory[addr & 0x07FF];
             case 0x2000:
+            case 0x3000:
                 if ((addr & 0x0FF8) != 0) log.log(Level.FINE, "PPU register mirroring at " + Integer.toHexString(addr));
                 return PPURegisters.INSTANCE.getMemAt(addr);
-            case 0x3000:
-                throw new java.lang.UnsupportedOperationException("Not supported yet.");
             default:
                 return mapperMemory.getCPUMemAt(addr);
         }
     }
 
     Short getMemAtW(Short addr) {
-        Short lo = getMemAt(addr).shortValue();
-        Short hi = getMemAt((short) (addr + 1)).shortValue();
+        int lo = getMemAt(addr)&0xFF;
+        int hi = getMemAt((short) (addr + 1))&0xFF;
         return (short) ((hi << 8) | lo);
     }
 
@@ -90,10 +89,15 @@ If a mapper doesn't fix $FFFA-$FFFF to some known bank (typically, along with th
                 mainMemory[addr & 0x7FF] = val;
                 return true;
             case 0x2000:
-                if ((addr & 0x0FF8) != 0) log.log(Level.FINE, "PPU register mirroring at " + Integer.toHexString(addr));
-                mainMemory[addr & 0x0007] = val;
             case 0x3000:
-                throw new java.lang.UnsupportedOperationException("Not supported yet.");
+                if ((addr & 0x0FF8) != 0) log.log(Level.FINE, "PPU register mirroring at " + Integer.toHexString(addr));
+                PPUMemory[addr & 0x0007] = val;
+                return true;
+            case 0x4000:
+                final short OAM_DMA_ADDRESS = (short)0x4014;
+                final short APU_ADDRESS_HIGH = (short)0x401F;
+                if(addr==OAM_DMA_ADDRESS) { Proc.INSTANCE.SetupDMA(val); return true; }
+                else if(addr<=APU_ADDRESS_HIGH) return false;
             default:
                 return mapperMemory.setCPUMemAt(addr, val);
         }
